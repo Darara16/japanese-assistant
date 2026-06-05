@@ -36,16 +36,16 @@ function todayString() {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-// ── Commit HTML to gh-pages branch ─────────────────────
+// ── Commit HTML to gh-pages using GITHUB_TOKEN ──────────
 async function saveHtmlToGitHub(html, dayNum) {
   const fileName = `japanese_study_day${dayNum}.html`;
   const repo     = process.env.GITHUB_REPOSITORY;
-  const pat      = process.env.G_PAT;
+  const token    = process.env.GITHUB_TOKEN;  // auto-provided by Actions, never in HTML
   const branch   = 'gh-pages';
   const url      = `https://api.github.com/repos/${repo}/contents/${fileName}`;
 
   const headers = {
-    'Authorization': `Bearer ${pat}`,
+    'Authorization': `Bearer ${token}`,
     'Content-Type':  'application/json',
     'Accept':        'application/vnd.github.v3+json'
   };
@@ -58,7 +58,7 @@ async function saveHtmlToGitHub(html, dayNum) {
   }
 
   const body = {
-    message: `Add Day ${dayNum} study file`,
+    message: `Day ${dayNum} study file`,
     content: Buffer.from(html).toString('base64'),
     branch
   };
@@ -78,6 +78,18 @@ async function saveHtmlToGitHub(html, dayNum) {
   const owner    = repo.split('/')[0].toLowerCase();
   const repoName = repo.split('/')[1];
   return `https://${owner}.github.io/${repoName}/${fileName}`;
+}
+
+// ── Mark day done in Google Sheets ──────────────────────
+async function markDayDone(sheets, dayNum) {
+  const sheetRow = dayNum + 1; // row 1 = header, row 2 = day 1
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range:         `Schedule!G${sheetRow}`,
+    valueInputOption: 'RAW',
+    requestBody:   { values: [['TRUE']] }
+  });
+  console.log(`Sheet: Day ${dayNum} marked TRUE`);
 }
 
 // ── Create Google Calendar event ────────────────────────
@@ -131,7 +143,7 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
 // ── ntfy push notification ──────────────────────────────
 async function sendNotification(day, fileUrl) {
   const topic = process.env.NTFY_TOPIC;
-  if (!topic) { console.log('No NTFY_TOPIC — skipping notification'); return; }
+  if (!topic) { console.log('No NTFY_TOPIC — skipping'); return; }
   await fetch(`https://ntfy.sh/${topic}`, {
     method:  'POST',
     body:    `Open → ${fileUrl}`,
@@ -144,20 +156,19 @@ async function sendNotification(day, fileUrl) {
   console.log('Push notification sent');
 }
 
-// ── Build prompt ────────────────────────────────────────
+// ── Build prompt for OpenAI ─────────────────────────────
 function buildPrompt(d) {
-  const repo = process.env.GITHUB_REPOSITORY || '';
-  const pat  = process.env.G_PAT        || '';
-  const pct  = ((d.day / 60) * 100).toFixed(2);
+  const pct = ((d.day / 60) * 100).toFixed(2);
 
+  // NOTE: no PAT or secrets in the HTML — markDone only updates UI + localStorage
   return `You are a Japanese study HTML renderer.
 Generate a complete standalone HTML file for Day ${d.day} of 60 (date: ${d.date}).
 
 THEME — Ocean Neumorphism:
 - Body background: linear-gradient(145deg,#e8f4fd,#d0e8f5,#c8e0f0) fixed
 - Two decorative blur orbs (position:fixed, pointer-events:none, z-index:0, filter:blur(80px), opacity:0.25):
-  top-right 500px circle radial-gradient #2196f3
-  bottom-left 400px circle radial-gradient #26c6da
+  top-right 500px circle radial-gradient(circle, #2196f3, transparent)
+  bottom-left 400px circle radial-gradient(circle, #26c6da, transparent)
 - Neumorphic shadow out: 6px 6px 14px #a8c8e0,-6px -6px 14px #ffffff
 - Neumorphic shadow in: inset 4px 4px 10px #a8c8e0,inset -4px -4px 10px #ffffff
 - Card shadow: 8px 8px 22px #9fc0db,-8px -8px 22px #ffffff
@@ -165,52 +176,51 @@ THEME — Ocean Neumorphism:
 - Base background color: #daeaf7
 - Text: primary #0d2d4a / secondary #2e6080 / muted #6e9ab5 / faint #9bbdd0
 - Border radius: 18px sections, 12px cards, 50px pills
-- Max width 900px centered, padding 36px 16px 100px
+- Max width 900px centered, body padding 36px 16px 100px
 
-SECTIONS (render all 7):
+SECTIONS (render all 7 in order):
 
 1. HEADER
 - Pill row: gradient pill "Day ${d.day} of 60", plain pill "N4 · 2026", plain pill "${d.date}"
-- H1: Japanese Study <span with gradient text>日本語</span>
+- H1: Japanese Study <span with gradient clip text>日本語</span>
 - Subtitle: Daily session · Kanji · Vocabulary · Shadowing · Podcast
-- Progress bar: nm-in track, accent gradient fill at ${pct}%, labels "Day ${d.day}" / "${pct}%" / "Day 60"
+- Progress bar: nm-in track, accent gradient fill animated to ${pct}% on load, labels "Day ${d.day}" left / "${pct}%" center / "Day 60" right
 
-2. KANJI — ${d.kanji.length} cards in responsive grid (min-width 240px per card)
-Each card (nm-out, hover nm-card): large kanji character 58px with text-shadow, meaning gradient uppercase, on/kun reading pills (nm-press), common words 12px muted, example sentence box (nm-in) with JP + EN italic
+2. KANJI — ${d.kanji.length} cards in responsive grid (auto-fit minmax 240px)
+Each card (nm-out shadow, hover nm-card): kanji character 58px bold text-shadow, meaning gradient uppercase 11px, on/kun reading pills (nm-press inset shadow), common words 12px muted, example box (nm-in) with JP sentence + EN translation italic muted
 
 3. VOCABULARY — ${d.vocab.length} items
-Each item (nm-out, grid 160px + 1fr): word 18px bold + reading 12px muted on left, meaning gradient uppercase + JP sentence + EN sentence italic muted on right
+Each item (nm-out, 2-col grid 160px + 1fr, hover nm-card): word 18px bold + reading 12px muted left col, meaning gradient uppercase 12px + JP sentence 13px + EN sentence italic muted 11px right col
 
 4. SHADOWING — 10 sentences
-Each item (nm-out flex row): numbered circle (nm-out), grammar pattern label gradient uppercase 10px, JP sentence 16px bold, English hint italic muted 11px, gradient play button circle (decorative)
+Each item (nm-out flex row, hover nm-card, active nm-press): numbered circle (nm-out, accent color number), grammar pattern label gradient uppercase 10px, JP sentence 16px bold, English hint italic muted 11px, gradient play button circle (decorative, no audio)
 
-5. PODCAST — one card
-Gradient banner (accent gradient bg): emoji thumb box, episode number label white 10px, JP title white 16px bold, furigana white 12px
-Body: tag pills (nm-press), reason box (nm-in) mentioning today vocab connection, 3 key phrase rows (nm-out) each showing JP → EN, gradient open episode link button
+5. PODCAST — single card (nm-out)
+Gradient banner: emoji thumb box, episode label white 10px uppercase, JP title white 16px bold, furigana white 12px
+Body: tag pills (nm-press), reason box (nm-in) mentioning today vocab connection, 3 key phrase rows (nm-out) JP arrow EN, gradient "▶ Open Episode" link button (opens url in new tab)
 
 6. SPEAKING DRILLS — first 5 shadowing sentences × 2 variations each
-Each drill block (nm-out): original sentence label + text, then 2 variation rows (nm-in) each with badge pill (nm-out) labeled Casual/Formal/Written/Texting and change notes italic muted
+Each drill (nm-out): original label + sentence, then 2 variation rows (nm-in) each with badge pill (nm-out, accent text) Casual/Formal/Written/Texting and change notes italic muted 11px
 
 7. COMPLETION
-Stat pills (nm-out): ${d.kanji.length} kanji · ${d.vocab.length} vocab · 10 shadowing · 1 podcast
-Large Mark as Done button (nm-card, border-radius 50px)
-Done note paragraph below
+Stat pills row (nm-out each): ${d.kanji.length} kanji · ${d.vocab.length} vocab · 10 shadowing · 1 podcast
+Large Mark as Done button (nm-card shadow, border-radius 50px, padding 17px 52px)
+Done note paragraph below in muted text
 
-JAVASCRIPT — include exactly:
+JAVASCRIPT — include exactly this:
 
 // Scroll reveal
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.07 });
 document.querySelectorAll('.section').forEach(s => io.observe(s));
-// sections: opacity:0 translateY(20px) → .visible: opacity:1 translateY(0), transition 0.55s
 
-// Progress bar
+// Progress bar on load
 window.addEventListener('load', () => {
   setTimeout(() => { document.getElementById('progressFill').style.width = '${pct}%'; }, 500);
 });
 
-// Confetti
+// Ocean confetti
 function launchConfetti() {
   const canvas = document.getElementById('confetti-canvas');
   const ctx = canvas.getContext('2d');
@@ -239,33 +249,30 @@ function launchConfetti() {
   draw();
 }
 
-// Mark as Done
-async function markDone() {
+// Mark as Done — UI only, no external calls
+function markDone() {
   const btn = document.getElementById('doneBtn');
   const note = document.getElementById('doneNote');
   if (btn.classList.contains('done')) return;
   btn.classList.add('done');
   btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
-  btn.style.cssText += 'background:linear-gradient(135deg,#1a6fa8,#26c6da);color:#fff;box-shadow:0 6px 22px rgba(26,111,168,0.40);';
+  btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
+  btn.style.color = '#fff';
+  btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
   note.textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
   launchConfetti();
   try { localStorage.setItem('jpstudy_day${d.day}_done','true'); } catch(e) {}
-  try {
-    await fetch('https://api.github.com/repos/${repo}/dispatches', {
-      method:'POST',
-      headers:{'Authorization':'Bearer ${pat}','Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
-      body:JSON.stringify({event_type:'mark-done',client_payload:{day:${d.day},date:'${d.date}'}})
-    });
-  } catch(e) { console.log('Status update failed:',e); }
 }
 
-// Restore completed state
+// Restore on load
 try {
   if (localStorage.getItem('jpstudy_day${d.day}_done')==='true') {
     const btn=document.getElementById('doneBtn');
     btn.classList.add('done');
     btn.innerHTML='🌸 &nbsp; Day ${d.day} Complete!';
-    btn.style.cssText+='background:linear-gradient(135deg,#1a6fa8,#26c6da);color:#fff;box-shadow:0 6px 22px rgba(26,111,168,0.40);';
+    btn.style.background='linear-gradient(135deg,#1a6fa8,#26c6da)';
+    btn.style.color='#fff';
+    btn.style.boxShadow='0 6px 22px rgba(26,111,168,0.40)';
     document.getElementById('doneNote').textContent='Great work. See you tomorrow for Day ${d.day + 1}.';
   }
 } catch(e) {}
@@ -287,11 +294,11 @@ ${JSON.stringify(d.podcast, null, 2)}
 Output: raw HTML only. No markdown. No code fences. Start with <!DOCTYPE html>.`;
 }
 
-// ── Call OpenAI API ─────────────────────────────────────
+// ── Call OpenAI ─────────────────────────────────────────
 async function generateHtml(dayData) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const msg = await client.chat.completions.create({
-    model:      'gpt-4o',
+    model:      'gpt-4o-mini',
     max_tokens: 16000,
     messages:   [{ role: 'user', content: buildPrompt(dayData) }]
   });
@@ -306,7 +313,6 @@ async function run() {
   const sheets   = google.sheets({ version: 'v4', auth });
   const calendar = google.calendar({ version: 'v3', auth });
 
-  // Load all 5 sheets with exact tab names
   console.log('Loading sheets...');
   const [schedule, vocabSheet, kanjiSheet, podcastSheet, shadowSheet] = await Promise.all([
     getSheet(sheets, 'Schedule'),
@@ -317,7 +323,7 @@ async function run() {
   ]);
   console.log(`Loaded — schedule:${schedule.length} vocab:${vocabSheet.length} kanji:${kanjiSheet.length} podcast:${podcastSheet.length} shadow:${shadowSheet.length}`);
 
-  // Find today's row
+  // Find today
   const today = todayString();
   const row   = schedule.find(r => r.Date === today);
   if (!row) {
@@ -332,24 +338,27 @@ async function run() {
   const podcastId = row.N4_Podcast.trim();
   const shadowIds = row.Reiko_shadow.split(',').map(s => s.trim()).filter(Boolean);
 
-  // Lookup by first column value (works regardless of column name)
-  const kanji   = kanjiIds.map(id  => kanjiSheet.find(r   => Object.values(r)[0] === id) || {});
-  const vocab   = vocabIds.map(id  => vocabSheet.find(r   => Object.values(r)[0] === id) || {});
+  // Lookup by first column
+  const kanji   = kanjiIds.map(id => kanjiSheet.find(r   => Object.values(r)[0] === id) || {});
+  const vocab   = vocabIds.map(id => vocabSheet.find(r   => Object.values(r)[0] === id) || {});
   const podcast = podcastSheet.find(r  => Object.values(r)[0] === podcastId) || {};
-  const shadow  = shadowIds.map(id  => shadowSheet.find(r  => Object.values(r)[0] === id) || {});
+  const shadow  = shadowIds.map(id => shadowSheet.find(r  => Object.values(r)[0] === id) || {});
 
-  console.log(`Resolved — kanji:${kanji.length} vocab:${vocab.length} shadow:${shadow.length} podcast found:${Object.keys(podcast).length > 0}`);
+  console.log(`Resolved — kanji:${kanji.length} vocab:${vocab.length} shadow:${shadow.length} podcast:${Object.keys(podcast).length > 0}`);
 
   const dayData = { day: parseInt(row.Day), date: today, kanji, vocab, podcast, shadow };
 
-  // Generate HTML via OpenAI
+  // Generate HTML
   console.log('Calling OpenAI API...');
   const html = await generateHtml(dayData);
   console.log(`HTML generated: ${html.length} chars`);
 
-  // Commit to gh-pages
+  // Commit to gh-pages using GITHUB_TOKEN (never touches HTML)
   const fileUrl = await saveHtmlToGitHub(html, dayData.day);
   console.log(`Published: ${fileUrl}`);
+
+  // Mark today as done in Sheet
+  await markDayDone(sheets, dayData.day);
 
   // Calendar + notification
   await createCalendarEvent(calendar, dayData, fileUrl);
