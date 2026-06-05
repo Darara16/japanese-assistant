@@ -1,0 +1,25 @@
+name: Mark Day Done
+
+on:
+  repository_dispatch:
+    types: [mark-done]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install
+
+      - name: Update sheet status
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          CALENDAR_ID:        ${{ secrets.CALENDAR_ID }}
+          DAY:                ${{ github.event.client_payload.day }}
+          DATE:               ${{ github.event.client_payload.date }}
+        run: node mark-done.js
