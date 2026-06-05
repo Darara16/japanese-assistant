@@ -163,7 +163,11 @@ async function saveHtmlToDrive(drive, html, dayNum) {
     console.log(`Updated existing Drive file: ${fileId}`);
   } else {
     const created = await drive.files.create({
-      requestBody: { name: fileName, mimeType: 'text/html' },
+      requestBody: {
+        name: fileName,
+        mimeType: 'text/html',
+        parents: [process.env.DRIVE_FOLDER_ID]   // ← saves into YOUR folder
+      },
       media,
       fields: 'id'
     });
