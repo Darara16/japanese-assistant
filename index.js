@@ -324,6 +324,9 @@ async function run() {
   }
   console.log(`Found Day ${row.Day} for ${todayStr}`);
   console.log('Row contents:', JSON.stringify(row));
+  console.log('Sheet sizes — kanji:', kanjiData.length, 'vocab:', vocabData.length, 'podcast:', podData.length, 'shadow:', shadowData.length);
+  console.log('Kanji sample:', JSON.stringify(kanjiData[0]));
+  console.log('Shadow sample:', JSON.stringify(shadowData[0]));
 
   // Build day data
   const dayData = {
