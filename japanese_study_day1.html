@@ -3,441 +3,451 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japanese Study Day 1 of 60</title>
+    <title>Japanese Study - Day 1 of 60</title>
     <style>
         body {
-            background: linear-gradient(145deg, #e8f4fd, #d0e8f5, #c8e0f0) fixed;
+            margin: 0;
             padding: 36px 16px 100px;
+            background: linear-gradient(145deg, #e8f4fd, #d0e8f5, #c8e0f0) fixed;
             font-family: Arial, sans-serif;
             color: #0d2d4a;
             max-width: 900px;
             margin: auto;
+            position: relative;
         }
-        .blur-orb {
+
+        .orb {
             position: fixed;
             pointer-events: none;
             z-index: 0;
             filter: blur(80px);
             opacity: 0.25;
         }
+
         .orb1 {
             top: 500px;
             right: 0;
+            border-radius: 50%;
             width: 500px;
             height: 500px;
             background: radial-gradient(circle, #2196f3, transparent);
         }
+
         .orb2 {
             bottom: 400px;
             left: 0;
+            border-radius: 50%;
             width: 400px;
             height: 400px;
             background: radial-gradient(circle, #26c6da, transparent);
         }
+
         .section {
-            margin-bottom: 40px;
-            border-radius: 18px;
             background: #daeaf7;
-            box-shadow: 8px 8px 22px #9fc0db, -8px -8px 22px #ffffff;
-            padding: 16px;
-            transition: box-shadow 0.3s;
-        }
-        .section:hover {
-            box-shadow: 6px 6px 14px #a8c8e0, -6px -6px 14px #ffffff;
-        }
-        .progress-bar {
             border-radius: 18px;
-            height: 10px;
-            background: #e8f4fd;
-            overflow: hidden;
-            margin-top: 8px;
+            box-shadow: 8px 8px 22px #9fc0db, -8px -8px 22px #ffffff;
+            margin-bottom: 36px;
+            padding: 20px;
+            position: relative;
+            transition: transform 0.3s;
         }
+
+        .section.visible {
+            transform: translateY(0);
+        }
+
+        .gradient-pill {
+            background: linear-gradient(135deg, #1a6fa8, #26c6da);
+            border-radius: 50px;
+            color: white;
+            padding: 10px 20px;
+            margin: 0 5px;
+            display: inline-block;
+        }
+
+        .pill {
+            background: #ffffff;
+            border-radius: 50px;
+            padding: 10px 20px;
+            margin: 0 5px;
+            display: inline-block;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, #1a6fa8, #26c6da);
+            -webkit-background-clip: text;
+            color: transparent;
+            font-size: inherit;
+        }
+
+        .progress {
+            height: 20px;
+            background: #cfd8dc;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
         .progress-fill {
             height: 100%;
-            background: linear-gradient(135deg,#1a6fa8,#26c6da);
+            background: linear-gradient(135deg, #1a6fa8, #26c6da);
             width: 0;
-            transition: width 0.5s;
+            transition: width 0.5s ease;
         }
-        .pills {
-            display: flex;
-            flex-direction: row;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .pill {
-            border-radius: 50px;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 8px 16px;
-            text-align: center;
-        }
-        .card {
-            border-radius: 12px;
+
+        .kanji-card, .vocab-card, .shadowing-card, .podcast-card {
             background: #ffffff;
-            padding: 12px;
+            border-radius: 12px;
             box-shadow: 6px 6px 14px #a8c8e0, -6px -6px 14px #ffffff;
+            padding: 12px;
+            margin-bottom: 16px;
             transition: box-shadow 0.3s;
         }
-        .card:hover {
-            box-shadow: 4px 4px 10px #a8c8e0, -4px -4px 10px #ffffff;
+
+        .kanji-card:hover, .vocab-card:hover, .shadowing-card:hover, .podcast-card:hover {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
-        .gradient-text {
+
+        .kanji-character {
+            font-size: 58px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .meaning {
+            font-size: 11px;
+            text-transform: uppercase;
             background: linear-gradient(135deg, #1a6fa8, #26c6da);
             -webkit-background-clip: text;
             color: transparent;
         }
-        .nm-press {
-            box-shadow: inset 4px 4px 10px #a8c8e0, inset -4px -4px 10px #ffffff;
-        }
-        .nm-in {
-            box-shadow: inset 4px 4px 10px #a8c8e0, inset -4px -4px 10px #ffffff;
-        }
-        .stat-pill {
+
+        .reading-pill {
+            background: #ffffff;
             border-radius: 50px;
-            background: #e8f4fd;
-            padding: 8px 16px;
-            box-shadow: 8px 8px 22px #9fc0db, -8px -8px 22px #ffffff;
+            padding: 5px;
+            margin: 0 2px;
+            display: inline-block;
         }
+
+        .common-words, .example {
+            font-size: 12px;
+            color: #6e9ab5;
+        }
+
+        .completion-stat {
+            display: inline-block;
+            margin: 5px;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 15px;
+            box-shadow: 6px 6px 14px #a8c8e0, -6px -6px 14px #ffffff;
+        }
+
         #doneBtn {
-            border-radius: 50px;
-            background: linear-gradient(135deg, #1a6fa8, #26c6da);
-            color: #fff;
+            background: #1a6fa8;
+            color: white;
             border: none;
+            border-radius: 50px;
             padding: 17px 52px;
-            font-size: 16px;
             cursor: pointer;
             transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+            font-size: 16px;
+        }
+
+        #doneNote {
+            color: #9bbdd0;
         }
     </style>
 </head>
 <body>
 
-    <div class="blur-orb orb1"></div>
-    <div class="blur-orb orb2"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
 
-    <section class="section">
-        <div class="pills">
-            <div class="pill gradient-text">Day 1 of 60</div>
-            <div class="pill">N4 · 2026</div>
-            <div class="pill">05/06/2026</div>
+<div class="section" id="header">
+    <div class="gradient-pill">Day 1 of 60</div>
+    <div class="pill">N4 · 2026</div>
+    <div class="pill">05/06/2026</div>
+    <h1>Japanese Study <span>日本語</span></h1>
+    <p>Daily session · Kanji · Vocabulary · Shadowing · Podcast</p>
+    <div class="progress">
+        <div class="progress-fill" id="progressFill" style="width: 0;"></div>
+    </div>
+</div>
+
+<div class="section" id="kanji">
+    <h2>KANJI</h2>
+    <div class="kanji-card">
+        <div class="kanji-character">悪</div>
+        <div class="meaning">Bad, evil, wrong</div>
+        <div class="reading-pill">アク</div>
+        <div class="reading-pill">わる.い</div>
+        <div class="common-words">悪い(わるい); 悪口(わるぐち); 最悪(さいあく)</div>
+        <div class="example">彼は悪い人ではありません。 <span class="italic muted">He is not a bad person.</span></div>
+    </div>
+    <div class="kanji-card">
+        <div class="kanji-character">安</div>
+        <div class="meaning">Cheap, peaceful, safe</div>
+        <div class="reading-pill">アン</div>
+        <div class="reading-pill">やす.い</div>
+        <div class="common-words">安い(やすい); 安心(あんしん); 安全(あんぜん)</div>
+        <div class="example">この服はとても安いです。 <span class="italic muted">These clothes are very cheap.</span></div>
+    </div>
+    <div class="kanji-card">
+        <div class="kanji-character">場</div>
+        <div class="meaning">Place, location, scene</div>
+        <div class="reading-pill">ジョウ</div>
+        <div class="reading-pill">ば</div>
+        <div class="common-words">場所(ばしょ); 会場(かいじょう); 広場(ひろば)</div>
+        <div class="example">子どもたちは広場で遊んでいます。 <span class="italic muted">The children are playing in the plaza.</span></div>
+    </div>
+</div>
+
+<div class="section" id="vocabulary">
+    <h2>VOCABULARY</h2>
+    <div class="vocab-card">
+        <div><strong>あ</strong> <span class="muted">あ</span></div>
+        <div class="meaning">Ah</div>
+        <div class="jp-sentence">あ、忘れた！</div>
+        <span class="italic muted">Ah, I forgot!</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>ああ</strong> <span class="muted">ああ</span></div>
+        <div class="meaning">like that; in that way</div>
+        <div class="jp-sentence">ああすれば、うまくいくよ。</div>
+        <span class="italic muted">If you do it like that, it will work out.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>あいさつ・する</strong> <span class="muted">あいさつ・する</span></div>
+        <div class="meaning">to greet</div>
+        <div class="jp-sentence">朝、近所の人にあいさつをした。</div>
+        <span class="italic muted">I greeted my neighbor in the morning.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>間</strong> <span class="muted">あいだ</span></div>
+        <div class="meaning">a space; interval; between</div>
+        <div class="jp-sentence">駅と学校のあいだに公園がある。</div>
+        <span class="italic muted">There is a park between the station and the school.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>合う</strong> <span class="muted">あう</span></div>
+        <div class="meaning">to match; to fit</div>
+        <div class="jp-sentence">この色はあなたの服に合っている。</div>
+        <span class="italic muted">This color matches your clothes.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>あかちゃん</strong> <span class="muted">あかちゃん</span></div>
+        <div class="meaning">infant; baby</div>
+        <div class="jp-sentence">あかちゃんが泣いている。</div>
+        <span class="italic muted">The baby is crying.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>上る</strong> <span class="muted">あがる</span></div>
+        <div class="meaning">to rise; to go up</div>
+        <div class="jp-sentence">試験の点数が上がった。</div>
+        <span class="italic muted">My test score went up.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>赤ん坊</strong> <span class="muted">あかんぼう</span></div>
+        <div class="meaning">baby</div>
+        <div class="jp-sentence">赤ん坊は一日中寝ている。</div>
+        <span class="italic muted">The baby sleeps all day.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>空く</strong> <span class="muted">あく</span></div>
+        <div class="meaning">to open up; to become empty</div>
+        <div class="jp-sentence">お腹が空いた。</div>
+        <span class="italic muted">My stomach has become empty (I'm hungry).</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>アクセサリー</strong> <span class="muted">アクセサリー</span></div>
+        <div class="meaning">accessory</div>
+        <div class="jp-sentence">彼女はアクセサリーをたくさん持っている。</div>
+        <span class="italic muted">She has a lot of accessories.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>あげる</strong> <span class="muted">あげる</span></div>
+        <div class="meaning">to give (to someone else)</div>
+        <div class="jp-sentence">友達にプレゼントをあげた。</div>
+        <span class="italic muted">I gave my friend a present.</span>
+    </div>
+    <div class="vocab-card">
+        <div><strong>浅い</strong> <span class="muted">あさい</span></div>
+        <div class="meaning">shallow; superficial</div>
+        <div class="jp-sentence">この川は浅いから、子供でも渡れる。</div>
+        <span class="italic muted">This river is shallow, so even children can cross it.</span>
+    </div>
+</div>
+
+<div class="section" id="shadowing">
+    <h2>SHADOWING</h2>
+    <div class="shadowing-card">
+        <div class="numbered-circle">1</div>
+        <div class="grammar-pattern">〜んですけど</div>
+        <div class="jp-sentence"><strong>PRの方(かた)に頂(いただ)いたんですけど、めちゃくちゃ良(よ)くて。</strong><span class="italic muted">— got it from PR — really good</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">2</div>
+        <div class="grammar-pattern">〜んですけど</div>
+        <div class="jp-sentence"><strong>リボーンって呼(よ)んでるんですけど、ブランドが大(おお)きく変(か)わる。</strong><span class="italic muted">— we call it Reborn — big change</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">3</div>
+        <div class="grammar-pattern">〜んですけど</div>
+        <div class="jp-sentence"><strong>10分間(ぷんかん)頑張(がんば)ったんですけど取(と)れなかった。</strong><span class="italic muted">— tried 10 min — couldn't</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">4</div>
+        <div class="grammar-pattern">〜んですけど</div>
+        <div class="jp-sentence"><strong>よく言(い)われるんですけど、顔(かお)が穏(おだ)やかになった。</strong><span class="italic muted">— often told — face softened</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">5</div>
+        <div class="grammar-pattern">〜んですけど</div>
+        <div class="jp-sentence"><strong>山梨県(やまなしけん)にドライブしてるんですけど。</strong><span class="italic muted">— driving to Yamanashi</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">6</div>
+        <div class="grammar-pattern">〜なんだけど</div>
+        <div class="jp-sentence"><strong>月曜日(げつようび)なんだけど、ずっと予定(よてい)があって。</strong><span class="italic muted">— it's Monday — but packed</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">7</div>
+        <div class="grammar-pattern">〜なんだけど</div>
+        <div class="jp-sentence"><strong>ずっとこの組(く)み合(あ)わせでやってるんだけど。</strong><span class="italic muted">— always this combo — though</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">8</div>
+        <div class="grammar-pattern">〜なんだけど</div>
+        <div class="jp-sentence"><strong>新居(しんきょ)になってから随分(ずいぶん)経(た)つんだけど。</strong><span class="italic muted">— been a while since moving</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">9</div>
+        <div class="grammar-pattern">〜なんだけど</div>
+        <div class="jp-sentence"><strong>リクエスト多(おお)いんだけど、あんまりやらない。</strong><span class="italic muted">— lots of requests — rarely do</span></div>
+    </div>
+    <div class="shadowing-card">
+        <div class="numbered-circle">10</div>
+        <div class="grammar-pattern">〜なんだけど</div>
+        <div class="jp-sentence"><strong>ヨーロッパ風(ふう)のおしゃれさもあるんだけど。</strong><span class="italic muted">— has European chic — though</span></div>
+    </div>
+</div>
+
+<div class="section" id="podcast">
+    <h2>PODCAST</h2>
+    <div class="podcast-card">
+        <div class="banner">
+            <div class="emoji-thumb">🎧</div>
+            <div class="episode-label">Episode 601</div>
+            <div class="jp-title">日本人と話すときに注意すべき3つのこと！</div>
+            <div class="furigana">日本人(にほんじん)と話す(はなす)ときに注意(ちゅうい)すべき3つのこと！</div>
         </div>
-        <h1>Japanese Study <span class="gradient-text">日本語</span></h1>
-        <h2>Daily session · Kanji · Vocabulary · Shadowing · Podcast</h2>
-        <div class="progress-bar">
-            <div id="progressFill" class="progress-fill"></div>
+        <div class="reason">
+            Today’s vocab connection: Learn etiquette when talking with Japanese people.
         </div>
-    </section>
-
-    <section class="section">
-        <h2>KANJI</h2>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
-            <div class="card">
-                <h3 style="font-size: 58px; text-shadow: 2px 2px 4px #aaa;">悪</h3>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 11px;">bad, evil, wrong</div>
-                <div class="pills nm-press">
-                    <span>アク, オ</span>
-                    <span>わる.い</span>
-                </div>
-                <div style="font-size: 12px; color: #6e9ab5;">悪い(わるい); 悪口(わるぐち); 最悪(さいあく)</div>
-                <div class="card nm-in">
-                    <p style="font-size: 12px; color: #9bbdd0;"><i>彼は悪い人ではありません。</i> <br><span style="color: #6e9ab5;">(かれ は わるい ひと では ありません。)</span> <br><span>(He is not a bad person.)</span></p>
-                </div>
-            </div>
-            <div class="card">
-                <h3 style="font-size: 58px; text-shadow: 2px 2px 4px #aaa;">安</h3>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 11px;">cheap, peaceful, safe</div>
-                <div class="pills nm-press">
-                    <span>アン</span>
-                    <span>やす.い</span>
-                </div>
-                <div style="font-size: 12px; color: #6e9ab5;">安い(やすい); 安心(あんしん); 安全(あんぜん)</div>
-                <div class="card nm-in">
-                    <p style="font-size: 12px; color: #9bbdd0;"><i>この服はとても安いです。</i> <br><span style="color: #6e9ab5;">(この ふく は とても やすい です。)</span> <br><span>(These clothes are very cheap.)</span></p>
-                </div>
-            </div>
-            <div class="card">
-                <h3 style="font-size: 58px; text-shadow: 2px 2px 4px #aaa;">場</h3>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 11px;">place, location, scene</div>
-                <div class="pills nm-press">
-                    <span>ジョウ</span>
-                    <span>ば</span>
-                </div>
-                <div style="font-size: 12px; color: #6e9ab5;">場所(ばしょ); 会場(かいじょう); 広場(ひろば)</div>
-                <div class="card nm-in">
-                    <p style="font-size: 12px; color: #9bbdd0;"><i>子どもたちは広場で遊んでいます。</i> <br><span style="color: #6e9ab5;">(こどもたち は ひろば で あそんで います。)</span> <br><span>(The children are playing in the plaza.)</span></p>
-                </div>
-            </div>
+        <div class="key-phrases">
+            <div>日本人 = Japanese people</div>
         </div>
-    </section>
+        <a href="https://podcasts.apple.com/us/podcast/601%E6%97%A5%E6%9C%AC%E4%BA%BA%E3%81%A8%E8%A9%B1%E3%81%99%E3%81%A8%E3%81%8D%E3%81%AB%E6%B3%A8%E6%84%8F%E3%81%99%E3%81%B9%E3%81%8D3%E3%81%A4%E3%81%AE%E3%81%93%E3%81%A8/id1588405417?i=1000718142803" target="_blank">▶ Open Episode</a>
+    </div>
+</div>
 
-    <section class="section">
-        <h2>VOCABULARY</h2>
-        <div style="display: grid; grid-template-columns: repeat(2, 160px) 1fr; gap: 16px;">
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">あ <span style="font-size: 12px; color: #6e9ab5;">あ</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">Ah</div>
-                <p style="font-size: 13px;">あ、忘れた！ <br><span style="color: #9bbdd0;"><i>Ah, I forgot!</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">ああ <span style="font-size: 12px; color: #6e9ab5;">ああ</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">like that; in that way</div>
-                <p style="font-size: 13px;">ああすれば、うまくいくよ。 <br><span style="color: #9bbdd0;"><i>If you do it like that, it will work out.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">あいさつ・する <span style="font-size: 12px; color: #6e9ab5;">あいさつ・する</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">to greet</div>
-                <p style="font-size: 13px;">朝、近所の人にあいさつをした。 <br><span style="color: #9bbdd0;"><i>I greeted my neighbor in the morning.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">間 <span style="font-size: 12px; color: #6e9ab5;">あいだ</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">a space; interval; between</div>
-                <p style="font-size: 13px;">駅と学校のあいだに公園がある。 <br><span style="color: #9bbdd0;"><i>There is a park between the station and the school.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">合う <span style="font-size: 12px; color: #6e9ab5;">あう</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">to match; to fit</div>
-                <p style="font-size: 13px;">この色はあなたの服に合っている。 <br><span style="color: #9bbdd0;"><i>This color matches your clothes.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">あかちゃん <span style="font-size: 12px; color: #6e9ab5;">あかちゃん</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">infant; baby</div>
-                <p style="font-size: 13px;">あかちゃんが泣いている。 <br><span style="color: #9bbdd0;"><i>The baby is crying.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">上る <span style="font-size: 12px; color: #6e9ab5;">あがる</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">to rise; to go up</div>
-                <p style="font-size: 13px;">試験の点数が上がった。 <br><span style="color: #9bbdd0;"><i>My test score went up.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">赤ん坊 <span style="font-size: 12px; color: #6e9ab5;">あかんぼう</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">baby</div>
-                <p style="font-size: 13px;">赤ん坊は一日中寝ている。 <br><span style="color: #9bbdd0;"><i>The baby sleeps all day.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">空く <span style="font-size: 12px; color: #6e9ab5;">あく</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">to open up; to become empty (空いている → vacant/free)</div>
-                <p style="font-size: 13px;">お腹が空いた。 <br><span style="color: #9bbdd0;"><i>My stomach has become empty (I'm hungry).</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">アクセサリー <span style="font-size: 12px; color: #6e9ab5;">アクセサリー</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">accessory</div>
-                <p style="font-size: 13px;">彼女はアクセサリーをたくさん持っている。 <br><span style="color: #9bbdd0;"><i>She has a lot of accessories.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">あげる <span style="font-size: 12px; color: #6e9ab5;">あげる</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">to give (to someone else)</div>
-                <p style="font-size: 13px;">友達にプレゼントをあげた。 <br><span style="color: #9bbdd0;"><i>I gave my friend a present.</i></span></p>
-            </div>
-            <div class="card">
-                <p style="font-size: 18px; font-weight: bold;">浅い <span style="font-size: 12px; color: #6e9ab5;">あさい</span></p>
-                <div style="color: #6e9ab5; text-transform: uppercase; font-size: 12px;">shallow; superficial</div>
-                <p style="font-size: 13px;">この川は浅いから、子供でも渡れる。 <br><span style="color: #9bbdd0;"><i>This river is shallow, so even children can cross it.</i></span></p>
-            </div>
-        </div>
-    </section>
+<div class="section" id="speaking-drills">
+    <h2>SPEAKING DRILLS</h2>
+    <div class="drill">
+        <div>Original: 〜んですけど</div>
+        <div>DRILL 1: PRの方(かた)に頂(いただ)いたんですけど — POLITE</div>
+        <div>: Soft tone for conversation</div>
+    </div>
+    <div class="drill">
+        <div>Variation: 〜なんだけど</div>
+        <div>DRILL 1: 月曜日(げつようび)なんだけど — CASUAL</div>
+        <div>: Informal contrast in conversation</div>
+    </div>
+</div>
 
-    <section class="section">
-        <h2>SHADOWING</h2>
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div class="card">
-                <span class="pill nm-press">1</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜んですけど (polite lead-in / softener)</span>
-                <p style="font-size: 16px; font-weight: bold;">PRの方(かた)に頂(いただ)いたんですけど、めちゃくちゃ良(よ)くて。 <br><span style="color: #9bbdd0;"><i>got it from PR — really good</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">2</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜んですけど (polite lead-in / softener)</span>
-                <p style="font-size: 16px; font-weight: bold;">リボーンって呼(よ)んでるんですけど、ブランドが大(おお)きく変(か)わる。 <br><span style="color: #9bbdd0;"><i>we call it Reborn — big change</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">3</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜んですけど (polite lead-in / softener)</span>
-                <p style="font-size: 16px; font-weight: bold;">10分間(ぷんかん)頑張(がんば)ったんですけど取(と)れなかった。 <br><span style="color: #9bbdd0;"><i>tried 10 min — couldn't</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">4</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜んですけど (polite lead-in / softener)</span>
-                <p style="font-size: 16px; font-weight: bold;">よく言(い)われるんですけど、顔(かお)が穏(おだ)やかになった。 <br><span style="color: #9bbdd0;"><i>often told — face softened</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">5</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜んですけど (polite lead-in / softener)</span>
-                <p style="font-size: 16px; font-weight: bold;">山梨県(やまなしけん)にドライブしてるんですけど。 <br><span style="color: #9bbdd0;"><i>driving to Yamanashi</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">6</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜なんだけど / 〜んだけど (casual contrast lead-in)</span>
-                <p style="font-size: 16px; font-weight: bold;">月曜日(げつようび)なんだけど、ずっと予定(よてい)があって。 <br><span style="color: #9bbdd0;"><i>it's Monday — but packed</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">7</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜なんだけど / 〜んだけど (casual contrast lead-in)</span>
-                <p style="font-size: 16px; font-weight: bold;">ずっとこの組(く)み合(あ)わせでやってるんだけど。 <br><span style="color: #9bbdd0;"><i>always this combo — though</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">8</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜なんだけど / 〜んだけど (casual contrast lead-in)</span>
-                <p style="font-size: 16px; font-weight: bold;">新居(しんきょ)になってから随分(ずいぶん)経(た)つんだけど。 <br><span style="color: #9bbdd0;"><i>been a while since moving</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">9</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜なんだけど / 〜んだけど (casual contrast lead-in)</span>
-                <p style="font-size: 16px; font-weight: bold;">リクエスト多(おお)いんだけど、あんまりやらない。 <br><span style="color: #9bbdd0;"><i>lots of requests — rarely do</i></span></p>
-            </div>
-            <div class="card">
-                <span class="pill nm-press">10</span>
-                <span style="text-transform: uppercase; font-size: 10px; color: #6e9ab5;">〜なんだけど / 〜んだけど (casual contrast lead-in)</span>
-                <p style="font-size: 16px; font-weight: bold;">ヨーロッパ風(ふう)のおしゃれさもあるんだけど。 <br><span style="color: #9bbdd0;"><i>has European chic — though</i></span></p>
-            </div>
-        </div>
-    </section>
+<div class="section" id="completion">
+    <h2>COMPLETION</h2>
+    <div class="stat-pill"><div class="completion-stat">3 kanji</div><div class="completion-stat">12 vocab</div><div class="completion-stat">10 shadowing</div><div class="completion-stat">1 podcast</div></div>
+    <button id="doneBtn" onclick="markDone()">Mark as Done</button>
+    <p id="doneNote"></p>
+</div>
 
-    <section class="section">
-        <h2>PODCAST</h2>
-        <div class="card">
-            <div style="background: linear-gradient(135deg,#1a6fa8,#26c6da); padding: 12px; border-radius: 12px;"></div>
-            <div style="font-size: 10px; text-transform: uppercase; color: #ffffff;">Episode 601</div>
-            <h3 style="color: #ffffff;">日本人と話すときに注意すべき3つのこと！</h3>
-            <p style="color: #ffffff; font-size: 12px;">日本人(にほんじん)と話す(はなす)ときに注意(ちゅうい)すべき3つのこと！</p>
-            <div class="pills nm-press">
-                <span>日本人</span>
-                <span>注意すべき</span>
-            </div>
-            <div class="card nm-in">
-                <p style="margin-bottom: 12px;">This episode discusses vocabulary connections.</p>
-                <div style="font-size: 13px;">Listen to the podcast here:</div>
-                <a href="https://podcasts.apple.com/us/podcast/601%E6%97%A5%E6%9C%AC%E4%BA%BA%E3%81%A8%E8%A9%B1%E3%81%99%E3%81%A8%E3%81%8D%E3%81%AB%E6%B3%A8%E6%84%8F%E3%81%99%E3%81%B9%E3%81%8D3%E3%81%A4%E3%81%AE%E3%81%93%E3%81%A8/id1588405417?i=1000718142803" target="_blank" style="color: #1a6fa8; text-decoration: underline;">▶ Open Episode</a>
-            </div>
-        </div>
-    </section>
+<canvas id="confetti-canvas"></canvas>
 
-    <section class="section">
-        <h2>SPEAKING DRILLS</h2>
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-            <div class="card nm-out">
-                <h3>1.〜んですけど</h3>
-                <p>PRの方(かた)に頂(いただ)いたんですけど、めちゃくちゃ良(よ)くて。</p>
-                <div class="card nm-in">
-                    <p>Casual / Formal / Written / Texting</p>
-                    <p style="font-style: italic; color: #9bbdd0;">packed for casual situations</p>
-                </div>
-            </div>
-            <div class="card nm-out">
-                <h3>2.〜なんだけど</h3>
-                <p>月曜日(げつようび)なんだけど、ずっと予定(よてい)があって。</p>
-                <div class="card nm-in">
-                    <p>Casual / Formal / Written / Texting</p>
-                    <p style="font-style: italic; color: #9bbdd0;">packed for formal situations</p>
-                </div>
-            </div>
-            <div class="card nm-out">
-                <h3>3.〜なんだけど</h3>
-                <p>リクエスト多(おお)いんだけど、あんまりやらない。</p>
-                <div class="card nm-in">
-                    <p>Casual / Formal / Written / Texting</p>
-                    <p style="font-style: italic; color: #9bbdd0;">packed for texting situations</p>
-                </div>
-            </div>
-            <div class="card nm-out">
-                <h3>4.〜んですけど</h3>
-                <p>10分間(ぷんかん)頑張(がんば)ったんですけど取(と)れなかった。</p>
-                <div class="card nm-in">
-                    <p>Casual / Formal / Written / Texting</p>
-                    <p style="font-style: italic; color: #9bbdd0;">packed for writing situations</p>
-                </div>
-            </div>
-            <div class="card nm-out">
-                <h3>5.〜んですけど</h3>
-                <p>よく言(い)われるんですけど、顔(かお)が穏(おだ)やかになった。</p>
-                <div class="card nm-in">
-                    <p>Casual / Formal / Written / Texting</p>
-                    <p style="font-style: italic; color: #9bbdd0;">packed for formal situations</p>
-                </div>
-            </div>
-        </div>
-    </section>
+<script>
+// Scroll reveal
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.07 });
+document.querySelectorAll('.section').forEach(s => io.observe(s));
 
-    <section class="section">
-        <h2>COMPLETION</h2>
-        <div class="pills" style="margin-bottom: 16px;">
-            <div class="stat-pill">3 kanji</div>
-            <div class="stat-pill">12 vocab</div>
-            <div class="stat-pill">10 shadowing</div>
-            <div class="stat-pill">1 podcast</div>
-        </div>
-        <button id="doneBtn" onclick="markDone()">Mark as Done</button>
-        <p id="doneNote" style="margin-top: 16px; color: #6e9ab5;"></p>
-    </section>
+// Progress bar on load
+window.addEventListener('load', () => {
+  setTimeout(() => { document.getElementById('progressFill').style.width = '1.67%'; }, 500);
+});
 
-    <script>
-        // Scroll reveal
-        const io = new IntersectionObserver(entries => {
-            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-        }, { threshold: 0.07 });
-        document.querySelectorAll('.section').forEach(s => io.observe(s));
+// Ocean confetti
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const colors = ['#1a6fa8','#26c6da','#4fc3f7','#81d4fa','#b3e5fc','#ffffff','#e1f5fe'];
+  const pieces = Array.from({length:140}, () => ({
+    x: Math.random()*canvas.width, y: Math.random()*-canvas.height,
+    r: Math.random()*7+2, d: Math.random()*2.5+1,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    tilt: Math.random()*10-5, tiltAngle:0, tiltSpeed:Math.random()*0.1+0.04,
+    shape: Math.random()>0.5?'circle':'rect'
+  }));
+  let frame=0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle+=p.tiltSpeed; p.y+=p.d; p.tilt=Math.sin(p.tiltAngle)*12;
+      ctx.beginPath(); ctx.fillStyle=p.color;
+      if(p.shape==='circle'){ctx.arc(p.x+p.tilt,p.y,p.r,0,Math.PI*2);ctx.fill();}
+      else{ctx.fillRect(p.x+p.tilt,p.y,p.r*2,p.r);}
+    });
+    frame++;
+    if(frame<200) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
 
-        // Progress bar on load
-        window.addEventListener('load', () => {
-            setTimeout(() => { document.getElementById('progressFill').style.width = '1.67%'; }, 500);
-        });
+// Mark as Done — UI only, no external calls
+function markDone() {
+  const btn = document.getElementById('doneBtn');
+  const note = document.getElementById('doneNote');
+  if (btn.classList.contains('done')) return;
+  btn.classList.add('done');
+  btn.innerHTML = ' &nbsp; Day 1 Complete!';
+  btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
+  btn.style.color = '#fff';
+  btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
+  note.textContent = 'Great work. See you tomorrow for Day 2.';
+  launchConfetti();
+  try { localStorage.setItem('jpstudy_day1_done','true'); } catch(e) {}
+}
 
-        // Ocean confetti
-        function launchConfetti() {
-            const canvas = document.createElement('canvas');
-            canvas.id = 'confetti-canvas';
-            document.body.appendChild(canvas);
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            const colors = ['#1a6fa8','#26c6da','#4fc3f7','#81d4fa','#b3e5fc','#ffffff','#e1f5fe'];
-            const pieces = Array.from({length:140}, () => ({
-                x: Math.random()*canvas.width, y: Math.random()*-canvas.height,
-                r: Math.random()*7+2, d: Math.random()*2.5+1,
-                color: colors[Math.floor(Math.random()*colors.length)],
-                tilt: Math.random()*10-5, tiltAngle:0, tiltSpeed:Math.random()*0.1+0.04,
-                shape: Math.random()>0.5?'circle':'rect'
-            }));
-            let frame=0;
-            function draw() {
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                pieces.forEach(p => {
-                    p.tiltAngle+=p.tiltSpeed; p.y+=p.d; p.tilt=Math.sin(p.tiltAngle)*12;
-                    ctx.beginPath(); ctx.fillStyle=p.color;
-                    if(p.shape==='circle'){ctx.arc(p.x+p.tilt,p.y,p.r,0,Math.PI*2);ctx.fill();}
-                    else{ctx.fillRect(p.x+p.tilt,p.y,p.r*2,p.r);}
-                });
-                frame++;
-                if(frame<200) requestAnimationFrame(draw);
-                else ctx.clearRect(0,0,canvas.width,canvas.height);
-            }
-            draw();
-        }
-
-        // Mark as Done — UI only, no external calls
-        function markDone() {
-            const btn = document.getElementById('doneBtn');
-            const note = document.getElementById('doneNote');
-            if (btn.classList.contains('done')) return;
-            btn.classList.add('done');
-            btn.innerHTML = '🌸 &nbsp; Day 1 Complete!';
-            btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
-            btn.style.color = '#fff';
-            btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
-            note.textContent = 'Great work. See you tomorrow for Day 2.';
-            launchConfetti();
-            try { localStorage.setItem('jpstudy_day1_done','true'); } catch(e) {}
-        }
-
-        // Restore on load
-        try {
-            if (localStorage.getItem('jpstudy_day1_done')==='true') {
-                const btn=document.getElementById('doneBtn');
-                btn.classList.add('done');
-                btn.innerHTML='🌸 &nbsp; Day 1 Complete!';
-                btn.style.background='linear-gradient(135deg,#1a6fa8,#26c6da)';
-                btn.style.color='#fff';
-                btn.style.boxShadow='0 6px 22px rgba(26,111,168,0.40)';
-                document.getElementById('doneNote').textContent='Great work. See you tomorrow for Day 2.';
-            }
-        } catch(e) {}
-    </script>
+// Restore on load
+try {
+  if (localStorage.getItem('jpstudy_day1_done')==='true') {
+    const btn=document.getElementById('doneBtn');
+    btn.classList.add('done');
+    btn.innerHTML=' &nbsp; Day 1 Complete!';
+    btn.style.background='linear-gradient(135deg,#1a6fa8,#26c6da)';
+    btn.style.color='#fff';
+    btn.style.boxShadow='0 6px 22px rgba(26,111,168,0.40)';
+    document.getElementById('doneNote').textContent='Great work. See you tomorrow for Day 2.';
+  }
+} catch(e) {}
+</script>
 </body>
 </html>
