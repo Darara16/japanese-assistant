@@ -310,9 +310,9 @@ async function run() {
   // Read all sheet tabs in parallel
   const [schedule, kanjiData, vocabData, podData, shadowData] = await Promise.all([
     getSheet(sheets, 'Schedule'),
-    getSheet(sheets, 'N4_Kanji'),
-    getSheet(sheets, 'N4_vocab'),
-    getSheet(sheets, 'N4_Podcast'),
+    getSheet(sheets, 'n4_vocab'),
+    getSheet(sheets, 'n4_kanji'),
+    getSheet(sheets, 'reiko_patterns_examples'),
     getSheet(sheets, 'Reiko_shadow')
   ]);
 
