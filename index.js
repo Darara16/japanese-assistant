@@ -165,67 +165,326 @@ async function sendNotification(day, fileUrl) {
 function buildPrompt(d) {
   const pct = ((d.day / 60) * 100).toFixed(2);
 
-  // NOTE: no PAT or secrets in the HTML — markDone only updates UI + localStorage
-  return `You are a Japanese study HTML renderer.
-Generate a complete standalone HTML file for Day ${d.day} of 60 (date: ${d.date}).
+  return `You are a Japanese study HTML renderer. Your job is to fill content into a fixed HTML template. You must NOT invent any design, layout, or CSS. Output only valid HTML starting with <!DOCTYPE html>.
 
-THEME — Ocean Neumorphism:
-- Body background: linear-gradient(145deg,#e8f4fd,#d0e8f5,#c8e0f0) fixed
-- Two decorative blur orbs (position:fixed, pointer-events:none, z-index:0, filter:blur(80px), opacity:0.25):
-  top-right 500px circle radial-gradient(circle, #2196f3, transparent)
-  bottom-left 400px circle radial-gradient(circle, #26c6da, transparent)
-- Neumorphic shadow out: 6px 6px 14px #a8c8e0,-6px -6px 14px #ffffff
-- Neumorphic shadow in: inset 4px 4px 10px #a8c8e0,inset -4px -4px 10px #ffffff
-- Card shadow: 8px 8px 22px #9fc0db,-8px -8px 22px #ffffff
-- Accent gradient: linear-gradient(135deg,#1a6fa8,#26c6da)
-- Base background color: #daeaf7
-- Text: primary #0d2d4a / secondary #2e6080 / muted #6e9ab5 / faint #9bbdd0
-- Border radius: 18px sections, 12px cards, 50px pills
-- Max width 900px centered, body padding 36px 16px 100px
+ABSOLUTE RULES — violations will break the product:
+1. Copy the EXACT CSS from the STYLE BLOCK below — do not add, remove, or change a single CSS rule
+2. Copy the EXACT HTML STRUCTURE from the STRUCTURE BLOCK below — do not add or remove any elements
+3. Only replace the CONTENT PLACEHOLDERS with today's data
+4. Do not add any extra divs, classes, styles, or scripts beyond what is specified
+5. Output raw HTML only — no markdown, no code fences, no explanation
 
-SECTIONS (render all 7 in order):
+════════════════════════════════════════
+STYLE BLOCK — copy this verbatim into <style>
+════════════════════════════════════════
+:root {
+  --bg: #daeaf7;
+  --bg-grad: linear-gradient(145deg, #e8f4fd 0%, #d0e8f5 50%, #c8e0f0 100%);
+  --nm-out: 6px 6px 14px #a8c8e0, -6px -6px 14px #ffffff;
+  --nm-card: 8px 8px 22px #9fc0db, -8px -8px 22px #ffffff;
+  --nm-in: inset 4px 4px 10px #a8c8e0, inset -4px -4px 10px #ffffff;
+  --nm-press: inset 3px 3px 8px #a8c8e0, inset -3px -3px 8px #ffffff;
+  --accent: linear-gradient(135deg, #1a6fa8, #26c6da);
+  --text-1: #0d2d4a;
+  --text-2: #2e6080;
+  --text-3: #6e9ab5;
+  --text-4: #9bbdd0;
+  --r: 18px;
+  --rs: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg-grad);
+  background-attachment: fixed;
+  color: var(--text-1);
+  min-height: 100vh;
+  padding: 32px 16px 80px;
+}
+body::before, body::after {
+  content: ''; position: fixed; border-radius: 50%;
+  pointer-events: none; z-index: 0; filter: blur(80px); opacity: 0.22;
+}
+body::before { width: 480px; height: 480px; background: radial-gradient(circle, #2196f3, transparent); top: -80px; right: -80px; }
+body::after  { width: 380px; height: 380px; background: radial-gradient(circle, #26c6da, transparent); bottom: -60px; left: -60px; }
+.wrap { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
 
-1. HEADER
-- Pill row: gradient pill "Day ${d.day} of 60", plain pill "N4 · 2026", plain pill "${d.date}"
-- H1: Japanese Study <span with gradient clip text>日本語</span>
-- Subtitle: Daily session · Kanji · Vocabulary · Shadowing · Podcast
-- Progress bar: nm-in track, accent gradient fill animated to ${pct}% on load, labels "Day ${d.day}" left / "${pct}%" center / "Day 60" right
+/* HEADER */
+.header { text-align: center; margin-bottom: 40px; }
+.pills { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.pill { background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 5px 18px; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text-2); }
+.pill-accent { background: linear-gradient(135deg, #1a6fa8, #26c6da); box-shadow: 0 4px 16px rgba(26,111,168,0.35); color: #fff; }
+.header h1 { font-size: clamp(24px, 5vw, 38px); font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+.header h1 span { background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.header p { font-size: 13px; color: var(--text-3); }
+.prog-wrap { max-width: 600px; margin: 20px auto 0; }
+.prog-track { background: var(--bg); box-shadow: var(--nm-in); border-radius: 50px; height: 10px; overflow: hidden; }
+.prog-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1a6fa8, #26c6da); border-radius: 50px; transition: width 1.4s cubic-bezier(.4,0,.2,1); }
+.prog-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-3); font-weight: 600; }
 
-2. KANJI — ${d.kanji.length} cards in responsive grid (auto-fit minmax 240px)
-Each card (nm-out shadow, hover nm-card): kanji character 58px bold text-shadow, meaning gradient uppercase 11px, on/kun reading pills (nm-press inset shadow), common words 12px muted, example box (nm-in) with JP sentence + EN translation italic muted
+/* SECTION */
+.section { background: var(--bg); box-shadow: var(--nm-card); border-radius: var(--r); padding: 24px 24px 22px; margin-bottom: 22px; opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.section.visible { opacity: 1; transform: translateY(0); }
+.sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(26,111,168,0.10); }
+.sec-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #1a6fa8, #26c6da); box-shadow: 0 4px 14px rgba(26,111,168,0.30); border-radius: var(--rs); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+.sec-title { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); }
+.sec-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.sec-count { margin-left: auto; background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 3px 12px; font-size: 11px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
 
-3. VOCABULARY — ${d.vocab.length} items
-Each item (nm-out, 2-col grid 160px + 1fr, hover nm-card): word 18px bold + reading 12px muted left col, meaning gradient uppercase 12px + JP sentence 13px + EN sentence italic muted 11px right col
+/* KANJI */
+.kanji-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.k-card { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 18px 16px; }
+.k-char { font-size: 54px; font-weight: 800; line-height: 1; color: var(--text-1); margin-bottom: 10px; text-shadow: 2px 2px 5px #a8c8e0, -1px -1px 3px #fff; }
+.k-meaning { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+.k-readings { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.k-pill { background: var(--bg); box-shadow: var(--nm-press); border-radius: 50px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+.k-pill span { color: var(--text-4); font-size: 10px; margin-right: 3px; }
+.k-words { font-size: 12px; color: var(--text-3); line-height: 1.7; margin-bottom: 10px; }
+.k-ex { background: var(--bg); box-shadow: var(--nm-in); border-radius: var(--rs); padding: 10px 12px; }
+.k-ex .jp { font-size: 13px; color: var(--text-1); font-weight: 500; line-height: 1.5; }
+.k-ex .en { font-size: 11px; color: var(--text-3); font-style: italic; margin-top: 3px; }
 
-4. SHADOWING — 10 sentences
-Each item (nm-out flex row, hover nm-card, active nm-press): numbered circle (nm-out, accent color number), grammar pattern label gradient uppercase 10px, JP sentence 16px bold, English hint italic muted 11px, gradient play button circle (decorative, no audio)
+/* VOCAB */
+.v-list { display: flex; flex-direction: column; gap: 8px; }
+.v-item { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 12px 14px; display: grid; grid-template-columns: 150px 1fr; gap: 10px 16px; align-items: start; }
+.v-word { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.2; }
+.v-read { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.v-meaning { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+.v-jp { font-size: 13px; color: var(--text-1); font-weight: 500; line-height: 1.5; }
+.v-en { font-size: 11px; color: var(--text-3); font-style: italic; margin-top: 2px; }
+@media (max-width: 480px) { .v-item { grid-template-columns: 1fr; } }
 
-5. PODCAST — single card (nm-out)
-Gradient banner: emoji thumb box, episode label white 10px uppercase, JP title white 16px bold, furigana white 12px
-Body: tag pills (nm-press), reason box (nm-in) mentioning today vocab connection, 3 key phrase rows (nm-out) JP arrow EN, gradient "▶ Open Episode" link button (opens url in new tab)
+/* SHADOWING */
+.s-list { display: flex; flex-direction: column; gap: 8px; }
+.s-item { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 13px 16px; display: flex; align-items: flex-start; gap: 12px; }
+.s-num { width: 26px; height: 26px; background: var(--bg); box-shadow: var(--nm-out); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #1a6fa8; flex-shrink: 0; margin-top: 2px; }
+.s-content { flex: 1; }
+.s-pattern { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+.s-jp { font-size: 15px; color: var(--text-1); font-weight: 600; line-height: 1.5; }
+.s-hint { font-size: 11px; color: var(--text-3); font-style: italic; margin-top: 3px; }
+.s-play { width: 32px; height: 32px; background: linear-gradient(135deg, #1a6fa8, #26c6da); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; font-size: 11px; }
 
-6. SPEAKING DRILLS — first 5 shadowing sentences × 2 variations each
-Each drill (nm-out): original label + sentence, then 2 variation rows (nm-in) each with badge pill (nm-out, accent text) Casual/Formal/Written/Texting and change notes italic muted 11px
+/* PODCAST */
+.pod-card { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); overflow: hidden; }
+.pod-banner { background: linear-gradient(135deg, #1a6fa8, #26c6da); padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; }
+.pod-thumb { width: 56px; height: 56px; background: rgba(255,255,255,0.18); border-radius: var(--rs); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.pod-ep { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
+.pod-title { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 4px; }
+.pod-furi { font-size: 11px; color: rgba(255,255,255,0.75); line-height: 1.6; }
+.pod-body { padding: 18px 20px; }
+.pod-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.pod-tag { background: var(--bg); box-shadow: var(--nm-press); border-radius: 50px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #1a6fa8; }
+.pod-reason { background: var(--bg); box-shadow: var(--nm-in); border-radius: var(--rs); padding: 12px 14px; font-size: 13px; color: var(--text-2); line-height: 1.65; margin-bottom: 14px; }
+.pod-reason strong { color: #1a6fa8; }
+.pod-phrases { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.pod-phrase { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 9px 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pod-phrase .pjp { font-size: 14px; font-weight: 700; color: var(--text-1); }
+.pod-phrase .parr { color: var(--text-4); font-size: 12px; }
+.pod-phrase .pen { font-size: 12px; color: var(--text-2); }
+.pod-link { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #1a6fa8, #26c6da); box-shadow: 0 4px 14px rgba(26,111,168,0.35); border-radius: 50px; padding: 11px 26px; text-decoration: none; font-size: 13px; font-weight: 700; color: #fff; }
 
-7. COMPLETION
-Stat pills row (nm-out each): ${d.kanji.length} kanji · ${d.vocab.length} vocab · 10 shadowing · 1 podcast
-Large Mark as Done button (nm-card shadow, border-radius 50px, padding 17px 52px)
-Done note paragraph below in muted text
+/* DRILLS */
+.d-list { display: flex; flex-direction: column; gap: 14px; }
+.d-item { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 16px 18px; }
+.d-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-4); margin-bottom: 3px; }
+.d-orig { font-size: 14px; font-weight: 700; color: var(--text-1); margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(26,111,168,0.10); }
+.d-vars { display: flex; flex-direction: column; gap: 7px; }
+.d-var { background: var(--bg); box-shadow: var(--nm-in); border-radius: var(--rs); padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; }
+.d-badge { background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 2px 9px; font-size: 10px; font-weight: 800; color: #1a6fa8; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.d-text { font-size: 13px; color: var(--text-1); line-height: 1.55; }
+.d-note { font-size: 11px; color: var(--text-3); margin-top: 2px; font-style: italic; }
 
-JAVASCRIPT — include exactly this:
+/* COMPLETION */
+.done-wrap { text-align: center; padding: 20px 16px; }
+.stat-pills { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.stat-pill { background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 7px 16px; font-size: 12px; font-weight: 700; color: var(--text-2); display: flex; align-items: center; gap: 5px; }
+.stat-pill b { background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 15px; }
+.done-btn { background: var(--bg); box-shadow: var(--nm-card); border: none; border-radius: 50px; padding: 16px 48px; font-size: 15px; font-weight: 800; color: var(--text-1); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; outline: none; }
+.done-btn:hover { box-shadow: 10px 10px 26px #9fc0db, -10px -10px 26px #fff; }
+.done-btn:active { box-shadow: var(--nm-press); transform: scale(0.98); }
+.done-note { font-size: 12px; color: var(--text-3); margin-top: 12px; }
+#confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
 
-// Scroll reveal
+════════════════════════════════════════
+STRUCTURE BLOCK — copy this verbatim, only replace <!-- CONTENT --> markers
+════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Japanese Study - Day ${d.day}</title>
+<style><!-- PASTE STYLE BLOCK HERE --></style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+<div class="wrap">
+
+  <div class="header">
+    <div class="pills">
+      <div class="pill pill-accent">Day ${d.day} of 60</div>
+      <div class="pill">N4 &middot; 2026</div>
+      <div class="pill">${d.date}</div>
+    </div>
+    <h1>Japanese Study <span>&#26085;&#26412;&#35486;</span></h1>
+    <p>Daily session &middot; Kanji &middot; Vocabulary &middot; Shadowing &middot; Podcast</p>
+    <div class="prog-wrap">
+      <div class="prog-track"><div class="prog-fill" id="progressFill"></div></div>
+      <div class="prog-labels"><span>Day ${d.day}</span><span>${pct}%</span><span>Day 60</span></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: KANJI -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#31558;</div>
+      <div><div class="sec-title">Kanji</div><div class="sec-sub"><!-- KANJI IDS --></div></div>
+      <div class="sec-count">${d.kanji.length} characters</div>
+    </div>
+    <div class="kanji-grid">
+      <!-- KANJI CARDS: for each kanji render:
+      <div class="k-card">
+        <div class="k-char">KANJI_CHARACTER</div>
+        <div class="k-meaning">MEANING</div>
+        <div class="k-readings">
+          <div class="k-pill"><span>on</span>ONYOMI</div>
+          <div class="k-pill"><span>kun</span>KUNYOMI</div>
+        </div>
+        <div class="k-words">COMMON_WORDS_WITH_FURIGANA</div>
+        <div class="k-ex">
+          <div class="jp">EXAMPLE_JAPANESE</div>
+          <div class="en">EXAMPLE_ENGLISH</div>
+        </div>
+      </div>
+      -->
+    </div>
+  </div>
+
+  <!-- SECTION 2: VOCABULARY -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#35486;</div>
+      <div><div class="sec-title">Vocabulary</div><div class="sec-sub"><!-- VOCAB IDS --></div></div>
+      <div class="sec-count">${d.vocab.length} words</div>
+    </div>
+    <div class="v-list">
+      <!-- VOCAB ITEMS: for each vocab render:
+      <div class="v-item">
+        <div>
+          <div class="v-word">WORD</div>
+          <div class="v-read">READING</div>
+        </div>
+        <div>
+          <div class="v-meaning">MEANING</div>
+          <div class="v-jp">SENTENCE_JP</div>
+          <div class="v-en">SENTENCE_EN</div>
+        </div>
+      </div>
+      -->
+    </div>
+  </div>
+
+  <!-- SECTION 3: SHADOWING -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#127897;</div>
+      <div><div class="sec-title">Shadowing</div><div class="sec-sub">Reiko sentences</div></div>
+      <div class="sec-count">10 sentences</div>
+    </div>
+    <div class="s-list">
+      <!-- SHADOW ITEMS: for each shadow render:
+      <div class="s-item">
+        <div class="s-num">NUMBER</div>
+        <div class="s-content">
+          <div class="s-pattern">GRAMMAR_PATTERN</div>
+          <div class="s-jp">JAPANESE_SENTENCE</div>
+          <div class="s-hint">ENGLISH_HINT</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      -->
+    </div>
+  </div>
+
+  <!-- SECTION 4: PODCAST -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#128251;</div>
+      <div><div class="sec-title">Podcast</div><div class="sec-sub"><!-- PODCAST ID --></div></div>
+      <div class="sec-count"><!-- DURATION --> min</div>
+    </div>
+    <div class="pod-card">
+      <div class="pod-banner">
+        <div class="pod-thumb">&#127911;</div>
+        <div>
+          <div class="pod-ep"><!-- EPISODE NUMBER --></div>
+          <div class="pod-title"><!-- TITLE JP --></div>
+          <div class="pod-furi"><!-- TITLE FURIGANA --></div>
+        </div>
+      </div>
+      <div class="pod-body">
+        <div class="pod-tags"><!-- TAG PILLS --></div>
+        <div class="pod-reason"><!-- REASON TIED TO TODAY VOCAB --></div>
+        <div class="pod-phrases">
+          <!-- 3 PHRASE ROWS -->
+        </div>
+        <a class="pod-link" href="<!-- URL -->" target="_blank" rel="noopener">&#9654;&nbsp; Open Episode</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: SPEAKING DRILLS -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#128483;</div>
+      <div><div class="sec-title">Speaking Drills</div><div class="sec-sub">First 5 sentences x 2 variations</div></div>
+      <div class="sec-count">5 x 2</div>
+    </div>
+    <div class="d-list">
+      <!-- DRILL ITEMS: for each of first 5 shadow sentences render:
+      <div class="d-item">
+        <div class="d-label">Original</div>
+        <div class="d-orig">ORIGINAL_SENTENCE</div>
+        <div class="d-vars">
+          <div class="d-var">
+            <div class="d-badge">Casual</div>
+            <div><div class="d-text">CASUAL_VARIATION</div><div class="d-note">CHANGE_NOTES</div></div>
+          </div>
+          <div class="d-var">
+            <div class="d-badge">Formal</div>
+            <div><div class="d-text">FORMAL_VARIATION</div><div class="d-note">CHANGE_NOTES</div></div>
+          </div>
+        </div>
+      </div>
+      -->
+    </div>
+  </div>
+
+  <!-- SECTION 6: COMPLETION -->
+  <div class="section">
+    <div class="done-wrap">
+      <div class="stat-pills">
+        <div class="stat-pill"><b>${d.kanji.length}</b> kanji</div>
+        <div class="stat-pill"><b>${d.vocab.length}</b> vocab</div>
+        <div class="stat-pill"><b>10</b> shadowing</div>
+        <div class="stat-pill"><b>1</b> podcast</div>
+      </div>
+      <button class="done-btn" id="doneBtn" onclick="markDone()">&#10003;&nbsp; Mark as Done</button>
+      <div class="done-note" id="doneNote">${60 - d.day} days remaining after today</div>
+    </div>
+  </div>
+
+</div>
+<script>
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.07 });
 document.querySelectorAll('.section').forEach(s => io.observe(s));
 
-// Progress bar on load
 window.addEventListener('load', () => {
   setTimeout(() => { document.getElementById('progressFill').style.width = '${pct}%'; }, 500);
 });
 
-// Ocean confetti
 function launchConfetti() {
   const canvas = document.getElementById('confetti-canvas');
   const ctx = canvas.getContext('2d');
@@ -254,51 +513,60 @@ function launchConfetti() {
   draw();
 }
 
-// Mark as Done — UI only, no external calls
 function markDone() {
   const btn = document.getElementById('doneBtn');
   const note = document.getElementById('doneNote');
   if (btn.classList.contains('done')) return;
   btn.classList.add('done');
-  btn.innerHTML = ' &nbsp; Day ${d.day} Complete!';
+  btn.innerHTML = '&#127800;&nbsp; Day ${d.day} Complete!';
   btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
   btn.style.color = '#fff';
   btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
   note.textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
   launchConfetti();
   try { localStorage.setItem('jpstudy_day${d.day}_done','true'); } catch(e) {}
+  fetch('https://api.github.com/repos/${repo}/actions/workflows/mark-done.yml/dispatches', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ${process.env.DONE_BUTTON_PAT}',
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github.v3+json'
+    },
+    body: JSON.stringify({ ref: 'main', inputs: { day: '${d.day}', date: '${d.date}' } })
+  }).catch(e => console.log('Status update failed:', e));
 }
 
-// Restore on load
 try {
   if (localStorage.getItem('jpstudy_day${d.day}_done')==='true') {
     const btn=document.getElementById('doneBtn');
     btn.classList.add('done');
-    btn.innerHTML=' &nbsp; Day ${d.day} Complete!';
+    btn.innerHTML='&#127800;&nbsp; Day ${d.day} Complete!';
     btn.style.background='linear-gradient(135deg,#1a6fa8,#26c6da)';
     btn.style.color='#fff';
     btn.style.boxShadow='0 6px 22px rgba(26,111,168,0.40)';
     document.getElementById('doneNote').textContent='Great work. See you tomorrow for Day ${d.day + 1}.';
   }
 } catch(e) {}
+</script>
+</body>
+</html>
 
-TODAY'S DATA — render exactly this content, do not invent or modify any Japanese text:
+════════════════════════════════════════
+CONTENT TO RENDER — use these exact values, do not modify any Japanese text
+════════════════════════════════════════
 
-KANJI:
+KANJI DATA (render one .k-card per item, include both example_english AND example_japanese):
 ${JSON.stringify(d.kanji, null, 2)}
 
-VOCABULARY:
+VOCABULARY DATA (render one .v-item per item, include sentence_example_en as .v-en):
 ${JSON.stringify(d.vocab, null, 2)}
 
-SHADOWING:
+SHADOWING DATA (render one .s-item per item, split example field on " — " to get JP sentence and English hint):
 ${JSON.stringify(d.shadow, null, 2)}
 
-PODCAST:
-${JSON.stringify(d.podcast, null, 2)}
-
-Output: raw HTML only. No markdown. No code fences. Start with <!DOCTYPE html>.`;
+PODCAST DATA (render one podcast card, use url field for the Open Episode link):
+${JSON.stringify(d.podcast, null, 2)}`;
 }
-
 // ── Call OpenAI ─────────────────────────────────────────
 async function generateHtml(dayData) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
