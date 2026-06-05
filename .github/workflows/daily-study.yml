@@ -23,7 +23,7 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           NTFY_TOPIC:         ${{ secrets.NTFY_TOPIC }}
           CALENDAR_ID:        ${{ secrets.CALENDAR_ID }}
-          G_PAT:         ${{ secrets.GITHUB_PAT }}
+          G_PAT:         ${{ secrets.G_PAT }}
           GITHUB_REPOSITORY:  ${{ github.repository }}
           DRIVE_FOLDER_ID:    ${{ secrets.DRIVE_FOLDER_ID }}
           OPENAI_API_KEY:     ${{ secrets.OPENAI_API_KEY }}
