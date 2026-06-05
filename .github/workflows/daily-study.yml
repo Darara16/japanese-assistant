@@ -26,4 +26,5 @@ jobs:
           G_PAT:         ${{ secrets.GITHUB_PAT }}
           GITHUB_REPOSITORY:  ${{ github.repository }}
           DRIVE_FOLDER_ID:    ${{ secrets.DRIVE_FOLDER_ID }}
+          OPENAI_API_KEY:     ${{ secrets.OPENAI_API_KEY }}
         run: node index.js
