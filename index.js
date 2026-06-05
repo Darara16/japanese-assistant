@@ -148,7 +148,7 @@ async function sendNotification(day, fileUrl) {
     method:  'POST',
     body:    `Open → ${fileUrl}`,
     headers: {
-      'Title':    `🇯🇵 Day ${day} — Study time!`,
+      'Title':    `Day ${day} — Study time!`,
       'Priority': 'default',
       'Tags':     'japan'
     }
@@ -255,7 +255,7 @@ function markDone() {
   const note = document.getElementById('doneNote');
   if (btn.classList.contains('done')) return;
   btn.classList.add('done');
-  btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
+  btn.innerHTML = ' &nbsp; Day ${d.day} Complete!';
   btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
   btn.style.color = '#fff';
   btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
@@ -269,7 +269,7 @@ try {
   if (localStorage.getItem('jpstudy_day${d.day}_done')==='true') {
     const btn=document.getElementById('doneBtn');
     btn.classList.add('done');
-    btn.innerHTML='🌸 &nbsp; Day ${d.day} Complete!';
+    btn.innerHTML=' &nbsp; Day ${d.day} Complete!';
     btn.style.background='linear-gradient(135deg,#1a6fa8,#26c6da)';
     btn.style.color='#fff';
     btn.style.boxShadow='0 6px 22px rgba(26,111,168,0.40)';
