@@ -143,14 +143,19 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
 // ── ntfy push notification ──────────────────────────────
 async function sendNotification(day, fileUrl) {
   const topic = process.env.NTFY_TOPIC;
-  if (!topic) { console.log('No NTFY_TOPIC — skipping'); return; }
+  if (!topic) { console.log('No NTFY_TOPIC - skipping'); return; }
+  
+  const safeUrl = fileUrl.replace(/[^\x00-\x7F]/g, '');
+  const message = `Day ${day} study file ready. Open: ${safeUrl}`;
+  
   await fetch(`https://ntfy.sh/${topic}`, {
-    method:  'POST',
-    body:    `Open → ${fileUrl}`,
+    method: 'POST',
+    body:   Buffer.from(message, 'ascii').toString(),
     headers: {
-      'Title':    `Day ${day} — Study time!`,
+      'Title':    `Japanese Study Day ${day}`,
       'Priority': 'default',
-      'Tags':     'japan'
+      'Tags':     'jp',
+      'Content-Type': 'text/plain'
     }
   });
   console.log('Push notification sent');
