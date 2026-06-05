@@ -5,26 +5,24 @@ on:
     - cron: '0 5 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-
       - run: npm install
-
-      - name: Generate study file + Calendar event
+      - name: Generate study file
         env:
-          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY:     ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           NTFY_TOPIC:         ${{ secrets.NTFY_TOPIC }}
           CALENDAR_ID:        ${{ secrets.CALENDAR_ID }}
-          G_PAT:         ${{ secrets.G_PAT }}
+          GITHUB_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY:  ${{ github.repository }}
-          DRIVE_FOLDER_ID:    ${{ secrets.DRIVE_FOLDER_ID }}
-          OPENAI_API_KEY:     ${{ secrets.OPENAI_API_KEY }}
         run: node index.js
