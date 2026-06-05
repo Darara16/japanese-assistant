@@ -1,17 +1,15 @@
 const Anthropic  = require('@anthropic-ai/sdk');
 const { google } = require('googleapis');
-const { Readable } = require('stream');
 
 const SPREADSHEET_ID = '1_xf4eMikaE02-2ZLffLFD1qCKf1y3s5of_CNI3XipWs';
 
-// ── Auth ────────────────────────────────────────────────
+// ── Auth (Sheets + Calendar only — no Drive needed) ─────
 async function getAuth() {
   const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
   return new google.auth.GoogleAuth({
     credentials,
     scopes: [
       'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive',
       'https://www.googleapis.com/auth/calendar'
     ]
   });
@@ -35,174 +33,79 @@ function getTodayRow(schedule) {
   const dd   = String(now.getDate()).padStart(2, '0');
   const mm   = String(now.getMonth() + 1).padStart(2, '0');
   const yyyy = now.getFullYear();
+  const todayStr = `${dd}/${mm}/${yyyy}`;
   return {
-    todayStr: `${dd}/${mm}/${yyyy}`,
-    row: schedule.find(r => r.Date === `${dd}/${mm}/${yyyy}`)
+    todayStr,
+    row: schedule.find(r => r.Date === todayStr)
   };
 }
 
-// ── Lookup IDs ──────────────────────────────────────────
+// ── Lookup IDs from a sheet ─────────────────────────────
 function lookup(data, ids) {
   return ids
     .map(id => id.trim())
     .filter(Boolean)
-    .map(id => data.find(r => r.ID === id) || {});
+    .map(id => data.find(r => r.ID === id || r.Id === id) || {});
 }
 
 function parseIds(str) {
   return str.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Generate HTML via Claude ────────────────────────────
-async function generateHtml(dayData, driveFileUrl) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  const msg = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 16000,
-    messages: [{
-      role: 'user',
-      content: buildPrompt(dayData, driveFileUrl)
-    }]
-  });
-
-  return msg.content[0].text;
-}
-
-// ── Build Claude prompt ─────────────────────────────────
-function buildPrompt(d, driveFileUrl) {
-  const GITHUB_REPO  = process.env.GITHUB_REPOSITORY || 'Darara16/japanese-assistant-';
-  const GITHUB_PAT   = process.env.GITHUB_PAT || 'YOUR_GITHUB_PAT';
-  const pct          = ((d.day / 60) * 100).toFixed(2);
-
-  return `You are a Japanese study HTML renderer.
-Generate a complete standalone HTML file for Day ${d.day} of 60 (date: ${d.date}).
-
-Ocean Neumorphism theme:
-- BG: linear-gradient(145deg,#e8f4fd,#d0e8f5,#c8e0f0) fixed
-- Blur orbs: top-right #2196f3 / bottom-left #26c6da opacity 0.25
-- Shadows out: 6px 6px 14px #a8c8e0,-6px -6px 14px #ffffff
-- Shadows in: inset 4px 4px 10px #a8c8e0,inset -4px -4px 10px #ffffff
-- Accent gradient: linear-gradient(135deg,#1a6fa8,#26c6da)
-- Text: primary #0d2d4a / secondary #2e6080 / muted #6e9ab5 / faint #9bbdd0
-- Border radius: 18px cards, 12px inner, 50px pills
-
-Sections in order:
-1. Header — "Day ${d.day} of 60", date "${d.date}", progress bar at ${pct}%, pill badges (Day ${d.day} of 60 / N4 · 2026 / ${d.date})
-2. Kanji cards grid — ${d.kanji.length} cards, each: large character, meaning (gradient text), on/kun reading pills, common words, example JP + EN in inset box
-3. Vocabulary list — ${d.vocab.length} items, each: word + reading left col, meaning (gradient uppercase) + JP sentence + EN sentence right col
-4. Shadowing list — 10 items, each: numbered circle, pattern label (gradient text), full JP sentence, English hint, gradient play button
-5. Podcast card — gradient banner with thumb + ep number + title + furigana, tags, reason box (inset), 3 key phrase rows, gradient open link button
-6. Speaking Drills — first 5 shadow sentences × 2 variations each (casual + formal/written/texting), show change notes
-7. Completion — stat pills (3 kanji / 12 vocab / 10 shadowing / 1 podcast), Mark as Done button, ocean confetti on click
-
-CRITICAL — Mark as Done button must use exactly this JS:
-async function markDone() {
-  const btn = document.getElementById('doneBtn');
-  const note = document.getElementById('doneNote');
-  if (btn.classList.contains('done')) return;
-  btn.classList.add('done');
-  btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
-  note.textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
-  launchConfetti();
-  try { localStorage.setItem('jpstudy_day${d.day}_done', 'true'); } catch(e) {}
-  try {
-    await fetch('https://api.github.com/repos/${GITHUB_REPO}/dispatches', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ${GITHUB_PAT}',
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        event_type: 'mark-done',
-        client_payload: { day: ${d.day}, date: '${d.date}' }
-      })
-    });
-  } catch(e) { console.log('Sheet update failed:', e); }
-}
-
-Restore state on load:
-try {
-  if (localStorage.getItem('jpstudy_day${d.day}_done') === 'true') {
-    const btn = document.getElementById('doneBtn');
-    btn.classList.add('done');
-    btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
-    document.getElementById('doneNote').textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
-  }
-} catch(e) {}
-
-DATA:
-KANJI: ${JSON.stringify(d.kanji)}
-VOCAB: ${JSON.stringify(d.vocab)}
-SHADOW: ${JSON.stringify(d.shadow)}
-PODCAST: ${JSON.stringify(d.podcast)}
-
-Output raw HTML only. No markdown. No explanation. No code fences.`;
-}
-
-// ── Save HTML to Google Drive ───────────────────────────
-async function saveHtmlToDrive(drive, html, dayNum) {
+// ── Save HTML to GitHub Pages (gh-pages branch) ─────────
+async function saveHtmlToGitHub(html, dayNum) {
   const fileName = `japanese_study_day${dayNum}.html`;
-  const folderId = process.env.DRIVE_FOLDER_ID;
+  const repo     = process.env.GITHUB_REPOSITORY;
+  const pat      = process.env.GITHUB_PAT;
+  const branch   = 'gh-pages';
+  const apiBase  = `https://api.github.com/repos/${repo}/contents/${fileName}`;
 
-  const media = {
-    mimeType: 'text/html',
-    body: Readable.from([html])
+  const headers = {
+    'Authorization': `Bearer ${pat}`,
+    'Content-Type':  'application/json',
+    'Accept':        'application/vnd.github.v3+json'
   };
 
-  // Search only within the shared folder
-  const existing = await drive.files.list({
-    q: `name='${fileName}' and '${folderId}' in parents and trashed=false`,
-    fields: 'files(id)',
-    supportsAllDrives: false
-  });
-
-  let fileId;
-
-  if (existing.data.files.length > 0) {
-    // Update content only — no parent change needed
-    fileId = existing.data.files[0].id;
-    await drive.files.update({
-      fileId,
-      media,
-      supportsAllDrives: false
-    });
-    console.log(`Updated existing Drive file: ${fileId}`);
-  } else {
-    // Create new file inside the shared folder
-    const created = await drive.files.create({
-      requestBody: {
-        name: fileName,
-        mimeType: 'text/html',
-        parents: [folderId]
-      },
-      media,
-      fields: 'id',
-      supportsAllDrives: false
-    });
-    fileId = created.data.id;
-
-    // Make publicly readable
-    await drive.permissions.create({
-      fileId,
-      requestBody: { role: 'reader', type: 'anyone' }
-    });
-    console.log(`Created new Drive file: ${fileId}`);
+  // Check if file already exists (need SHA to update)
+  let sha;
+  const check = await fetch(`${apiBase}?ref=${branch}`, { headers });
+  if (check.ok) {
+    const existing = await check.json();
+    sha = existing.sha;
   }
 
-  return `https://drive.google.com/file/d/${fileId}/view`;
+  // Commit the file to gh-pages branch
+  const body = {
+    message: `Day ${dayNum} study file`,
+    content: Buffer.from(html).toString('base64'),
+    branch
+  };
+  if (sha) body.sha = sha;
+
+  const res = await fetch(apiBase, {
+    method:  'PUT',
+    headers,
+    body:    JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`GitHub commit failed: ${err}`);
+  }
+
+  const owner    = repo.split('/')[0].toLowerCase();
+  const repoName = repo.split('/')[1];
+  const fileUrl  = `https://${owner}.github.io/${repoName}/japanese_study_day${dayNum}.html`;
+  console.log(`Committed to gh-pages: ${fileUrl}`);
+  return fileUrl;
 }
 
-// ── Create Google Calendar event ────────────────────────
+// ── Create / update Google Calendar event ───────────────
 async function createCalendarEvent(calendar, dayData, fileUrl) {
   const calendarId = process.env.CALENDAR_ID || 'primary';
-
-  // Build event date from dd/mm/yyyy
   const [dd, mm, yyyy] = dayData.date.split('/');
   const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  // Check if event already exists for this day
   const existing = await calendar.events.list({
     calendarId,
     timeMin: `${dateStr}T05:00:00Z`,
@@ -219,7 +122,7 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
       `📖 Today's content:`,
       `• Kanji: ${dayData.kanji.map(k => k.kanji || k.ID).join('  ')}`,
       `• Vocabulary: ${dayData.vocab.slice(0, 4).map(v => v.word || v.ID).join(', ')} + ${dayData.vocab.length - 4} more`,
-      `• Shadowing: ${dayData.shadow.length} sentences · Pattern: ${dayData.shadow[0]?.pattern || ''}`,
+      `• Shadowing: ${dayData.shadow.length} sentences · ${dayData.shadow[0]?.['Grammar Pattern / Word'] || ''}`,
       `• Podcast: ${dayData.podcast?.title || ''}`,
       ``,
       `🔗 Open study file:`,
@@ -238,23 +141,20 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
     reminders: {
       useDefault: false,
       overrides: [
-        { method: 'popup', minutes: 0 }   // popup right at 6am
+        { method: 'popup', minutes: 0 }
       ]
     },
-    colorId: '7'  // peacock blue — matches ocean theme
+    colorId: '7'
   };
 
   if (existing.data.items.length > 0) {
-    // Update existing event
-    const eventId = existing.data.items[0].id;
     await calendar.events.update({
       calendarId,
-      eventId,
+      eventId: existing.data.items[0].id,
       requestBody: eventBody
     });
     console.log(`Updated Calendar event for Day ${dayData.day}`);
   } else {
-    // Create new event
     const event = await calendar.events.insert({
       calendarId,
       requestBody: eventBody
@@ -270,7 +170,7 @@ async function sendNotification(dayData, fileUrl) {
 
   await fetch(`https://ntfy.sh/${topic}`, {
     method: 'POST',
-    body: `Open your study file → ${fileUrl}`,
+    body:   `Open your study file → ${fileUrl}`,
     headers: {
       'Title':    `🇯🇵 Day ${dayData.day} — Study time!`,
       'Priority': 'default',
@@ -280,34 +180,151 @@ async function sendNotification(dayData, fileUrl) {
   console.log('Push notification sent');
 }
 
+// ── Generate HTML via Claude ────────────────────────────
+async function generateHtml(dayData, fileUrl) {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const msg = await client.messages.create({
+    model:      'claude-opus-4-5',
+    max_tokens: 16000,
+    messages:   [{ role: 'user', content: buildPrompt(dayData, fileUrl) }]
+  });
+
+  return msg.content[0].text;
+}
+
+// ── Build Claude prompt ─────────────────────────────────
+function buildPrompt(d, fileUrl) {
+  const repo      = process.env.GITHUB_REPOSITORY || 'Darara16/japanese-assistant-';
+  const pat       = process.env.GITHUB_PAT        || '';
+  const pct       = ((d.day / 60) * 100).toFixed(2);
+
+  return `You are a Japanese study HTML renderer.
+Generate a complete standalone HTML file for Day ${d.day} of 60 (date: ${d.date}).
+
+Ocean Neumorphism theme:
+- BG: linear-gradient(145deg,#e8f4fd,#d0e8f5,#c8e0f0) fixed attachment
+- Decorative blur orbs: top-right #2196f3 / bottom-left #26c6da, opacity 0.25, blur 80px, z-index 0
+- Shadows out: 6px 6px 14px #a8c8e0,-6px -6px 14px #ffffff
+- Shadows in: inset 4px 4px 10px #a8c8e0,inset -4px -4px 10px #ffffff
+- Card shadow: 8px 8px 22px #9fc0db,-8px -8px 22px #ffffff
+- Accent gradient: linear-gradient(135deg,#1a6fa8,#26c6da)
+- Text: primary #0d2d4a / secondary #2e6080 / muted #6e9ab5 / faint #9bbdd0
+- Border radius: 18px cards, 12px inner elements, 50px pills
+
+Sections in order:
+
+1. HEADER
+- Pill badges: "Day ${d.day} of 60" (gradient pill), "N4 · 2026", "${d.date}"
+- Title: Japanese Study 日本語
+- Subtitle: Daily session · Kanji · Vocabulary · Shadowing · Podcast
+- Progress bar: ${pct}% filled with accent gradient, showing Day ${d.day} / Day 60 labels
+
+2. KANJI (${d.kanji.length} cards in a responsive grid)
+Each card: large character (58px), meaning (gradient text, uppercase), on/kun reading pills (neumorphic pressed), common words, inset example box with JP sentence + EN translation
+
+3. VOCABULARY (${d.vocab.length} items)
+Each item: neumorphic card, 2-column grid (word+reading left, meaning+sentence right), meaning in gradient uppercase text, JP sentence, EN translation in muted italic
+
+4. SHADOWING (10 sentences)
+Each item: numbered circle, grammar pattern label (gradient text), full JP sentence (16px), English hint (muted italic), gradient play button (decorative)
+
+5. PODCAST
+Gradient banner with: episode number, Japanese title, furigana title
+Body: tag pills, reason box (inset, tied to today's vocab), 3 key phrase rows, gradient "Open Episode" link button
+
+6. SPEAKING DRILLS
+First 5 shadowing sentences × 2 variations each (casual + formal/written/texting)
+Show original, then each variation with a badge (Casual/Formal/etc) and change notes in muted italic
+
+7. COMPLETION
+Stat pills: ${d.kanji.length} kanji · ${d.vocab.length} vocab · 10 shadowing · 1 podcast
+Mark as Done button (large, neumorphic)
+On click: button turns gradient, shows "🌸 Day ${d.day} Complete!", fires ocean confetti, saves to localStorage key jpstudy_day${d.day}_done, AND calls GitHub to trigger mark-done workflow
+
+CRITICAL — the Mark as Done button must call this exact JS function:
+async function markDone() {
+  const btn = document.getElementById('doneBtn');
+  const note = document.getElementById('doneNote');
+  if (btn.classList.contains('done')) return;
+  btn.classList.add('done');
+  btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
+  note.textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
+  launchConfetti();
+  try { localStorage.setItem('jpstudy_day${d.day}_done', 'true'); } catch(e) {}
+  try {
+    await fetch('https://api.github.com/repos/${repo}/dispatches', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ${pat}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify({
+        event_type: 'mark-done',
+        client_payload: { day: ${d.day}, date: '${d.date}' }
+      })
+    });
+  } catch(e) { console.log('Status update failed:', e); }
+}
+
+Restore completed state on page load:
+try {
+  if (localStorage.getItem('jpstudy_day${d.day}_done') === 'true') {
+    const btn = document.getElementById('doneBtn');
+    btn.classList.add('done');
+    btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
+    document.getElementById('doneNote').textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
+  }
+} catch(e) {}
+
+Ocean confetti function: 140 pieces, colors ['#1a6fa8','#26c6da','#4fc3f7','#81d4fa','#b3e5fc','#ffffff','#e1f5fe'], mix of circles and rectangles, 200 frames then clear.
+
+Scroll reveal: IntersectionObserver, threshold 0.07, adds class 'visible', sections start opacity 0 translateY(20px), transition 0.55s ease.
+
+DATA — use this exact content, do not invent or modify any Japanese text:
+
+KANJI:
+${JSON.stringify(d.kanji, null, 2)}
+
+VOCABULARY:
+${JSON.stringify(d.vocab, null, 2)}
+
+SHADOWING:
+${JSON.stringify(d.shadow, null, 2)}
+
+PODCAST:
+${JSON.stringify(d.podcast, null, 2)}
+
+Output: raw HTML only. No markdown. No explanation. No code fences. Start with <!DOCTYPE html>.`;
+}
+
 // ── Main ────────────────────────────────────────────────
 async function run() {
   console.log('Starting JP Study generation...');
 
   const auth     = await getAuth();
   const sheets   = google.sheets({ version: 'v4', auth });
-  const drive    = google.drive({ version: 'v3', auth });
   const calendar = google.calendar({ version: 'v3', auth });
 
   // Read all sheet tabs in parallel
   const [schedule, kanjiData, vocabData, podData, shadowData] = await Promise.all([
     getSheet(sheets, 'Schedule'),
-    getSheet(sheets, 'n4_vocab'),
-    getSheet(sheets, 'n4_kanji'),
-    getSheet(sheets, 'japanese_podcast_kb'),
-    getSheet(sheets, 'reiko_patterns_examples')
+    getSheet(sheets, 'N4_Kanji'),
+    getSheet(sheets, 'N4_vocab'),
+    getSheet(sheets, 'N4_Podcast'),
+    getSheet(sheets, 'Reiko_shadow')
   ]);
 
-  // Find today
+  // Find today's row
   const { row, todayStr } = getTodayRow(schedule);
   if (!row) {
     console.log(`No schedule row found for ${todayStr} — nothing to do.`);
     process.exit(0);
   }
-
   console.log(`Found Day ${row.Day} for ${todayStr}`);
 
-  // Build day data object
+  // Build day data
   const dayData = {
     day:     parseInt(row.Day),
     date:    row.Date,
@@ -317,27 +334,28 @@ async function run() {
     shadow:  lookup(shadowData, parseIds(row.Reiko_shadow))
   };
 
-  // Step 1 — save placeholder to Drive first to get the URL
-  const placeholderHtml = `<html><body>Generating Day ${dayData.day}...</body></html>`;
-  const fileUrl = await saveHtmlToDrive(drive, placeholderHtml, dayData.day);
-  console.log(`Drive URL: ${fileUrl}`);
+  // Build the file URL (we know it before generating)
+  const repo     = process.env.GITHUB_REPOSITORY;
+  const owner    = repo.split('/')[0].toLowerCase();
+  const repoName = repo.split('/')[1];
+  const fileUrl  = `https://${owner}.github.io/${repoName}/japanese_study_day${dayData.day}.html`;
+  console.log(`File will be at: ${fileUrl}`);
 
-  // Step 2 — generate real HTML with Claude (passing fileUrl for self-reference)
+  // Generate HTML via Claude
   console.log('Calling Claude API...');
   const html = await generateHtml(dayData, fileUrl);
   console.log(`HTML generated: ${html.length} chars`);
 
-  // Step 3 — update Drive file with real HTML
-  await saveHtmlToDrive(drive, html, dayData.day);
-  console.log('Drive file updated with real HTML');
+  // Commit to gh-pages
+  await saveHtmlToGitHub(html, dayData.day);
 
-  // Step 4 — create Google Calendar event
+  // Create Google Calendar event
   await createCalendarEvent(calendar, dayData, fileUrl);
 
-  // Step 5 — send push notification
+  // Send push notification
   await sendNotification(dayData, fileUrl);
 
-  console.log(`✓ Day ${dayData.day} complete → ${fileUrl}`);
+  console.log(`\n✓ Day ${dayData.day} complete → ${fileUrl}`);
 }
 
 run().catch(err => {
