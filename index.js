@@ -313,7 +313,7 @@ async function run() {
     getSheet(sheets, 'n4_vocab'),
     getSheet(sheets, 'n4_kanji'),
     getSheet(sheets, 'reiko_patterns_examples'),
-    getSheet(sheets, 'Reiko_shadow')
+    getSheet(sheets, 'japanese_podcast_kb')
   ]);
 
   // Find today's row
@@ -328,10 +328,10 @@ async function run() {
   const dayData = {
     day:     parseInt(row.Day),
     date:    row.Date,
-    kanji:   lookup(kanjiData,  parseIds(row.N4_Kanji)),
-    vocab:   lookup(vocabData,  parseIds(row.N4_vocab)),
-    podcast: lookup(podData,   [row.N4_Podcast])[0] || {},
-    shadow:  lookup(shadowData, parseIds(row.Reiko_shadow))
+    kanji:   lookup(kanjiData,  parseIds(row.n4_kanji)),
+    vocab:   lookup(vocabData,  parseIds(row.n4_vocab)),
+    podcast: lookup(podData,   [row.japanese_podcast_kb])[0] || {},
+    shadow:  lookup(shadowData, parseIds(row.reiko_patterns_examples))
   };
 
   // Build the file URL (we know it before generating)
