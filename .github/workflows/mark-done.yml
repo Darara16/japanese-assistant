@@ -22,4 +22,5 @@ jobs:
           CALENDAR_ID:        ${{ secrets.CALENDAR_ID }}
           DAY:                ${{ github.event.client_payload.day }}
           DATE:               ${{ github.event.client_payload.date }}
+          G_PAT: ${{ secrets.G_PAT }}
         run: node mark-done.js
