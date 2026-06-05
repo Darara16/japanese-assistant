@@ -1,4 +1,4 @@
-const Anthropic  = require('@anthropic-ai/sdk');
+const OpenAI     = require('openai');
 const { google } = require('googleapis');
 
 const SPREADSHEET_ID = '1_xf4eMikaE02-2ZLffLFD1qCKf1y3s5of_CNI3XipWs';
@@ -27,14 +27,6 @@ async function getSheet(sheets, tabName) {
   );
 }
 
-// ── Find a row by its ID column ─────────────────────────
-function findById(data, id) {
-  const clean = id.trim();
-  return data.find(row =>
-    Object.values(row).some((v, i) => i === 0 && v === clean)
-  ) || null;
-}
-
 // ── Today as DD/MM/YYYY ─────────────────────────────────
 function todayString() {
   const now  = new Date();
@@ -58,7 +50,6 @@ async function saveHtmlToGitHub(html, dayNum) {
     'Accept':        'application/vnd.github.v3+json'
   };
 
-  // Get existing file SHA if it exists (required for updates)
   let sha;
   const check = await fetch(`${url}?ref=${branch}`, { headers });
   if (check.ok) {
@@ -94,15 +85,13 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
   const calendarId = process.env.CALENDAR_ID || 'primary';
   const [dd, mm, yyyy] = dayData.date.split('/');
   const dateStr = `${yyyy}-${mm}-${dd}`;
-
   const summary = `🇯🇵 Japanese Study — Day ${dayData.day} of 60`;
 
-  // Check if event already exists
   const existing = await calendar.events.list({
     calendarId,
-    timeMin: `${dateStr}T05:00:00Z`,
-    timeMax: `${dateStr}T07:00:00Z`,
-    q:       summary,
+    timeMin:      `${dateStr}T05:00:00Z`,
+    timeMax:      `${dateStr}T07:00:00Z`,
+    q:            summary,
     singleEvents: true
   });
 
@@ -111,9 +100,9 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
     description: [
       `Day ${dayData.day} of 60 · N4 · ${dayData.date}`,
       '',
-      `Kanji:    ${dayData.kanji.map(k => k.kanji).join('  ')}`,
-      `Vocab:    ${dayData.vocab.slice(0, 5).map(v => v.word).join(', ')} ...`,
-      `Podcast:  ${dayData.podcast.title_jp || ''}`,
+      `Kanji:   ${dayData.kanji.map(k => k.kanji).join('  ')}`,
+      `Vocab:   ${dayData.vocab.slice(0, 5).map(v => v.word).join(', ')} ...`,
+      `Podcast: ${dayData.podcast.title_jp || ''}`,
       '',
       `Study file: ${fileUrl}`
     ].join('\n'),
@@ -121,7 +110,7 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
     end:   { dateTime: `${dateStr}T07:00:00`, timeZone: 'Europe/Vienna' },
     reminders: {
       useDefault: false,
-      overrides: [{ method: 'popup', minutes: 0 }]
+      overrides:  [{ method: 'popup', minutes: 0 }]
     },
     colorId: '7'
   };
@@ -134,10 +123,7 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
     });
     console.log('Calendar event updated');
   } else {
-    await calendar.events.insert({
-      calendarId,
-      requestBody: eventBody
-    });
+    await calendar.events.insert({ calendarId, requestBody: eventBody });
     console.log('Calendar event created');
   }
 }
@@ -145,8 +131,7 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
 // ── ntfy push notification ──────────────────────────────
 async function sendNotification(day, fileUrl) {
   const topic = process.env.NTFY_TOPIC;
-  if (!topic) { console.log('No NTFY_TOPIC set — skipping notification'); return; }
-
+  if (!topic) { console.log('No NTFY_TOPIC — skipping notification'); return; }
   await fetch(`https://ntfy.sh/${topic}`, {
     method:  'POST',
     body:    `Open → ${fileUrl}`,
@@ -159,7 +144,7 @@ async function sendNotification(day, fileUrl) {
   console.log('Push notification sent');
 }
 
-// ── Build prompt for Claude ─────────────────────────────
+// ── Build prompt ────────────────────────────────────────
 function buildPrompt(d) {
   const repo = process.env.GITHUB_REPOSITORY || '';
   const pat  = process.env.GITHUB_PAT        || '';
@@ -171,117 +156,129 @@ Generate a complete standalone HTML file for Day ${d.day} of 60 (date: ${d.date}
 THEME — Ocean Neumorphism:
 - Body background: linear-gradient(145deg,#e8f4fd,#d0e8f5,#c8e0f0) fixed
 - Two decorative blur orbs (position:fixed, pointer-events:none, z-index:0, filter:blur(80px), opacity:0.25):
-  top-right: 500px circle, radial-gradient #2196f3
-  bottom-left: 400px circle, radial-gradient #26c6da
-- Neumorphic shadow out: 6px 6px 14px #a8c8e0, -6px -6px 14px #ffffff
-- Neumorphic shadow in:  inset 4px 4px 10px #a8c8e0, inset -4px -4px 10px #ffffff
-- Card shadow: 8px 8px 22px #9fc0db, -8px -8px 22px #ffffff
+  top-right 500px circle radial-gradient #2196f3
+  bottom-left 400px circle radial-gradient #26c6da
+- Neumorphic shadow out: 6px 6px 14px #a8c8e0,-6px -6px 14px #ffffff
+- Neumorphic shadow in: inset 4px 4px 10px #a8c8e0,inset -4px -4px 10px #ffffff
+- Card shadow: 8px 8px 22px #9fc0db,-8px -8px 22px #ffffff
 - Accent gradient: linear-gradient(135deg,#1a6fa8,#26c6da)
-- Background color for all elements: #daeaf7
-- Text primary: #0d2d4a  secondary: #2e6080  muted: #6e9ab5  faint: #9bbdd0
+- Base background color: #daeaf7
+- Text: primary #0d2d4a / secondary #2e6080 / muted #6e9ab5 / faint #9bbdd0
 - Border radius: 18px sections, 12px cards, 50px pills
-- Max width: 900px centered
+- Max width 900px centered, padding 36px 16px 100px
 
-SECTIONS (render all 7 in this order):
+SECTIONS (render all 7):
 
 1. HEADER
-Pill row: gradient pill "Day ${d.day} of 60", plain pill "N4 · 2026", plain pill "${d.date}"
-H1: Japanese Study <span gradient>日本語</span>
-Subtitle: Daily session · Kanji · Vocabulary · Shadowing · Podcast
-Progress bar: track is nm-in, fill is accent gradient at ${pct}%, labels Day ${d.day} / ${pct}% / Day 60
+- Pill row: gradient pill "Day ${d.day} of 60", plain pill "N4 · 2026", plain pill "${d.date}"
+- H1: Japanese Study <span with gradient text>日本語</span>
+- Subtitle: Daily session · Kanji · Vocabulary · Shadowing · Podcast
+- Progress bar: nm-in track, accent gradient fill at ${pct}%, labels "Day ${d.day}" / "${pct}%" / "Day 60"
 
-2. KANJI — ${d.kanji.length} cards in responsive grid (min 240px)
-Each card (nm-out, hover nm-card):
-  - Character 58px bold with text-shadow
-  - Meaning: gradient text uppercase 11px
-  - Reading pills (nm-press): on-reading, kun-reading
-  - Common words: 12px muted
-  - Example box (nm-in): JP sentence + EN translation italic
+2. KANJI — ${d.kanji.length} cards in responsive grid (min-width 240px per card)
+Each card (nm-out, hover nm-card): large kanji character 58px with text-shadow, meaning gradient uppercase, on/kun reading pills (nm-press), common words 12px muted, example sentence box (nm-in) with JP + EN italic
 
 3. VOCABULARY — ${d.vocab.length} items
-Each item (nm-out, 2-col grid 160px + 1fr):
-  Left: word 18px bold, reading 12px muted
-  Right: meaning gradient uppercase 12px, JP sentence 13px, EN sentence italic muted 11px
+Each item (nm-out, grid 160px + 1fr): word 18px bold + reading 12px muted on left, meaning gradient uppercase + JP sentence + EN sentence italic muted on right
 
 4. SHADOWING — 10 sentences
-Each item (nm-out, flex row):
-  Numbered circle (nm-out), pattern label gradient text 10px uppercase, JP sentence 16px bold, hint italic muted, gradient play button circle
+Each item (nm-out flex row): numbered circle (nm-out), grammar pattern label gradient uppercase 10px, JP sentence 16px bold, English hint italic muted 11px, gradient play button circle (decorative)
 
-5. PODCAST — single card
-Gradient banner: thumb emoji box, episode label, JP title 16px bold white, furigana 12px white
-Body: tag pills (nm-press), reason box (nm-in) tied to today vocab, 3 phrase rows (nm-out) with JP → EN, gradient open link button
+5. PODCAST — one card
+Gradient banner (accent gradient bg): emoji thumb box, episode number label white 10px, JP title white 16px bold, furigana white 12px
+Body: tag pills (nm-press), reason box (nm-in) mentioning today vocab connection, 3 key phrase rows (nm-out) each showing JP → EN, gradient open episode link button
 
-6. SPEAKING DRILLS — first 5 shadowing sentences × 2 variations
-Each drill (nm-out): original sentence, then 2 variations in nm-in boxes each with a badge (nm-out) labelled Casual/Formal/Written/Texting and change notes italic muted
+6. SPEAKING DRILLS — first 5 shadowing sentences × 2 variations each
+Each drill block (nm-out): original sentence label + text, then 2 variation rows (nm-in) each with badge pill (nm-out) labeled Casual/Formal/Written/Texting and change notes italic muted
 
 7. COMPLETION
 Stat pills (nm-out): ${d.kanji.length} kanji · ${d.vocab.length} vocab · 10 shadowing · 1 podcast
-Mark as Done button (nm-card, large, 50px border-radius)
-Done note text below button
+Large Mark as Done button (nm-card, border-radius 50px)
+Done note paragraph below
 
-JAVASCRIPT (include all of this exactly):
+JAVASCRIPT — include exactly:
 
-Scroll reveal:
+// Scroll reveal
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.07 });
 document.querySelectorAll('.section').forEach(s => io.observe(s));
-All .section elements start: opacity:0; transform:translateY(20px); transition:opacity 0.55s ease,transform 0.55s ease;
-.section.visible: opacity:1; transform:translateY(0);
+// sections: opacity:0 translateY(20px) → .visible: opacity:1 translateY(0), transition 0.55s
 
-Progress bar animate on load:
+// Progress bar
 window.addEventListener('load', () => {
   setTimeout(() => { document.getElementById('progressFill').style.width = '${pct}%'; }, 500);
 });
 
-Ocean confetti (launchConfetti function):
-140 pieces, colors ['#1a6fa8','#26c6da','#4fc3f7','#81d4fa','#b3e5fc','#ffffff','#e1f5fe']
-Mix of circles and rect shapes, 200 frames animation then clear canvas
-Canvas is position:fixed top:0 left:0 width:100% height:100% pointer-events:none z-index:999
+// Confetti
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const colors = ['#1a6fa8','#26c6da','#4fc3f7','#81d4fa','#b3e5fc','#ffffff','#e1f5fe'];
+  const pieces = Array.from({length:140}, () => ({
+    x: Math.random()*canvas.width, y: Math.random()*-canvas.height,
+    r: Math.random()*7+2, d: Math.random()*2.5+1,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    tilt: Math.random()*10-5, tiltAngle:0, tiltSpeed:Math.random()*0.1+0.04,
+    shape: Math.random()>0.5?'circle':'rect'
+  }));
+  let frame=0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle+=p.tiltSpeed; p.y+=p.d; p.tilt=Math.sin(p.tiltAngle)*12;
+      ctx.beginPath(); ctx.fillStyle=p.color;
+      if(p.shape==='circle'){ctx.arc(p.x+p.tilt,p.y,p.r,0,Math.PI*2);ctx.fill();}
+      else{ctx.fillRect(p.x+p.tilt,p.y,p.r*2,p.r);}
+    });
+    frame++;
+    if(frame<200) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
 
-Mark as Done:
+// Mark as Done
 async function markDone() {
   const btn = document.getElementById('doneBtn');
   const note = document.getElementById('doneNote');
   if (btn.classList.contains('done')) return;
   btn.classList.add('done');
   btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
-  btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
-  btn.style.color = '#fff';
-  btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
+  btn.style.cssText += 'background:linear-gradient(135deg,#1a6fa8,#26c6da);color:#fff;box-shadow:0 6px 22px rgba(26,111,168,0.40);';
   note.textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
   launchConfetti();
-  try { localStorage.setItem('jpstudy_day${d.day}_done', 'true'); } catch(e) {}
+  try { localStorage.setItem('jpstudy_day${d.day}_done','true'); } catch(e) {}
   try {
     await fetch('https://api.github.com/repos/${repo}/dispatches', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ${pat}', 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-      body: JSON.stringify({ event_type: 'mark-done', client_payload: { day: ${d.day}, date: '${d.date}' } })
+      method:'POST',
+      headers:{'Authorization':'Bearer ${pat}','Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+      body:JSON.stringify({event_type:'mark-done',client_payload:{day:${d.day},date:'${d.date}'}})
     });
-  } catch(e) { console.log('Status update failed:', e); }
+  } catch(e) { console.log('Status update failed:',e); }
 }
 
-Restore on load:
+// Restore completed state
 try {
-  if (localStorage.getItem('jpstudy_day${d.day}_done') === 'true') {
-    const btn = document.getElementById('doneBtn');
+  if (localStorage.getItem('jpstudy_day${d.day}_done')==='true') {
+    const btn=document.getElementById('doneBtn');
     btn.classList.add('done');
-    btn.innerHTML = '🌸 &nbsp; Day ${d.day} Complete!';
-    btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
-    btn.style.color = '#fff';
-    document.getElementById('doneNote').textContent = 'Great work. See you tomorrow for Day ${d.day + 1}.';
+    btn.innerHTML='🌸 &nbsp; Day ${d.day} Complete!';
+    btn.style.cssText+='background:linear-gradient(135deg,#1a6fa8,#26c6da);color:#fff;box-shadow:0 6px 22px rgba(26,111,168,0.40);';
+    document.getElementById('doneNote').textContent='Great work. See you tomorrow for Day ${d.day + 1}.';
   }
 } catch(e) {}
 
-TODAY'S DATA — render exactly this content, do not invent or change any Japanese:
+TODAY'S DATA — render exactly this content, do not invent or modify any Japanese text:
 
-KANJI (${d.kanji.length} items):
+KANJI:
 ${JSON.stringify(d.kanji, null, 2)}
 
-VOCABULARY (${d.vocab.length} items):
+VOCABULARY:
 ${JSON.stringify(d.vocab, null, 2)}
 
-SHADOWING (${d.shadow.length} items):
+SHADOWING:
 ${JSON.stringify(d.shadow, null, 2)}
 
 PODCAST:
@@ -290,15 +287,15 @@ ${JSON.stringify(d.podcast, null, 2)}
 Output: raw HTML only. No markdown. No code fences. Start with <!DOCTYPE html>.`;
 }
 
-// ── Call Claude API ─────────────────────────────────────
+// ── Call OpenAI API ─────────────────────────────────────
 async function generateHtml(dayData) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const msg = await client.messages.create({
-    model:      'claude-opus-4-5',
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const msg = await client.chat.completions.create({
+    model:      'gpt-4o',
     max_tokens: 16000,
     messages:   [{ role: 'user', content: buildPrompt(dayData) }]
   });
-  return msg.content[0].text;
+  return msg.choices[0].message.content;
 }
 
 // ── MAIN ────────────────────────────────────────────────
@@ -309,7 +306,7 @@ async function run() {
   const sheets   = google.sheets({ version: 'v4', auth });
   const calendar = google.calendar({ version: 'v3', auth });
 
-  // Load all 5 sheets — exact tab names from your spreadsheet
+  // Load all 5 sheets with exact tab names
   console.log('Loading sheets...');
   const [schedule, vocabSheet, kanjiSheet, podcastSheet, shadowSheet] = await Promise.all([
     getSheet(sheets, 'Schedule'),
@@ -320,7 +317,7 @@ async function run() {
   ]);
   console.log(`Loaded — schedule:${schedule.length} vocab:${vocabSheet.length} kanji:${kanjiSheet.length} podcast:${podcastSheet.length} shadow:${shadowSheet.length}`);
 
-  // Find today
+  // Find today's row
   const today = todayString();
   const row   = schedule.find(r => r.Date === today);
   if (!row) {
@@ -329,31 +326,24 @@ async function run() {
   }
   console.log(`Day ${row.Day} → ${today}`);
 
-  // Parse IDs from schedule row
-  const kanjiIds   = row.N4_Kanji.split(',').map(s => s.trim()).filter(Boolean);
-  const vocabIds   = row.N4_vocab.split(',').map(s => s.trim()).filter(Boolean);
-  const podcastId  = row.N4_Podcast.trim();
-  const shadowIds  = row.Reiko_shadow.split(',').map(s => s.trim()).filter(Boolean);
+  // Parse IDs
+  const kanjiIds  = row.N4_Kanji.split(',').map(s => s.trim()).filter(Boolean);
+  const vocabIds  = row.N4_vocab.split(',').map(s => s.trim()).filter(Boolean);
+  const podcastId = row.N4_Podcast.trim();
+  const shadowIds = row.Reiko_shadow.split(',').map(s => s.trim()).filter(Boolean);
 
-  // Lookup rows by ID (first column)
-  const kanji   = kanjiIds.map(id   => kanjiSheet.find(r   => Object.values(r)[0] === id) || {});
-  const vocab   = vocabIds.map(id   => vocabSheet.find(r   => Object.values(r)[0] === id) || {});
-  const podcast = podcastSheet.find(r => Object.values(r)[0] === podcastId) || {};
+  // Lookup by first column value (works regardless of column name)
+  const kanji   = kanjiIds.map(id  => kanjiSheet.find(r   => Object.values(r)[0] === id) || {});
+  const vocab   = vocabIds.map(id  => vocabSheet.find(r   => Object.values(r)[0] === id) || {});
+  const podcast = podcastSheet.find(r  => Object.values(r)[0] === podcastId) || {};
   const shadow  = shadowIds.map(id  => shadowSheet.find(r  => Object.values(r)[0] === id) || {});
 
-  console.log(`Resolved — kanji:${kanji.length} vocab:${vocab.length} shadow:${shadow.length} podcast:${podcast[Object.keys(podcast)[0]] || 'NOT FOUND'}`);
+  console.log(`Resolved — kanji:${kanji.length} vocab:${vocab.length} shadow:${shadow.length} podcast found:${Object.keys(podcast).length > 0}`);
 
-  const dayData = {
-    day: parseInt(row.Day),
-    date: today,
-    kanji,
-    vocab,
-    podcast,
-    shadow
-  };
+  const dayData = { day: parseInt(row.Day), date: today, kanji, vocab, podcast, shadow };
 
-  // Generate HTML
-  console.log('Calling Claude API...');
+  // Generate HTML via OpenAI
+  console.log('Calling OpenAI API...');
   const html = await generateHtml(dayData);
   console.log(`HTML generated: ${html.length} chars`);
 
@@ -361,10 +351,8 @@ async function run() {
   const fileUrl = await saveHtmlToGitHub(html, dayData.day);
   console.log(`Published: ${fileUrl}`);
 
-  // Calendar event
+  // Calendar + notification
   await createCalendarEvent(calendar, dayData, fileUrl);
-
-  // Push notification
   await sendNotification(dayData.day, fileUrl);
 
   console.log(`\n✓ Done → ${fileUrl}`);
