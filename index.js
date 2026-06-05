@@ -323,6 +323,7 @@ async function run() {
     process.exit(0);
   }
   console.log(`Found Day ${row.Day} for ${todayStr}`);
+  console.log('Row contents:', JSON.stringify(row));
 
   // Build day data
   const dayData = {
