@@ -1,0 +1,24 @@
+name: Generate Daily Japanese Study
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # 5am UTC = 6am Vienna (CEST)
+  workflow_dispatch:       # also lets you trigger manually from GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install
+
+      - name: Generate study file
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: node index.js
