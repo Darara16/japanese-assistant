@@ -2,8 +2,8 @@ name: Generate Daily Japanese Study
 
 on:
   schedule:
-    - cron: '0 5 * * *'  # 5am UTC = 6am Vienna (CEST)
-  workflow_dispatch:       # manual trigger from GitHub UI
+    - cron: '0 5 * * *'
+  workflow_dispatch:
 
 jobs:
   generate:
@@ -13,14 +13,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - run: npm install
 
       - name: Generate study file + Calendar event
         env:
-          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
-          GOOGLE_CREDENTIALS:  ${{ secrets.GOOGLE_CREDENTIALS }}
-          NTFY_TOPIC:          ${{ secrets.NTFY_TOPIC }}
-          CALENDAR_ID:         ${{ secrets.CALENDAR_ID }}
+          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          NTFY_TOPIC:         ${{ secrets.NTFY_TOPIC }}
+          CALENDAR_ID:        ${{ secrets.CALENDAR_ID }}
+          GITHUB_PAT:         ${{ secrets.GITHUB_PAT }}
+          GITHUB_REPOSITORY:  ${{ github.repository }}
         run: node index.js
