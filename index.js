@@ -97,7 +97,7 @@ async function createCalendarEvent(calendar, dayData, fileUrl) {
   const calendarId = process.env.CALENDAR_ID || 'primary';
   const [dd, mm, yyyy] = dayData.date.split('/');
   const dateStr = `${yyyy}-${mm}-${dd}`;
-  const summary = `🇯🇵 Japanese Study — Day ${dayData.day} of 60`;
+  const summary = `Japanese Study — Day ${dayData.day} of 60`;
 
   const existing = await calendar.events.list({
     calendarId,
