@@ -144,34 +144,46 @@ Output raw HTML only. No markdown. No explanation. No code fences.`;
 // ── Save HTML to Google Drive ───────────────────────────
 async function saveHtmlToDrive(drive, html, dayNum) {
   const fileName = `japanese_study_day${dayNum}.html`;
-
-  const existing = await drive.files.list({
-    q: `name='${fileName}' and trashed=false`,
-    fields: 'files(id)'
-  });
+  const folderId = process.env.DRIVE_FOLDER_ID;
 
   const media = {
     mimeType: 'text/html',
     body: Readable.from([html])
   };
 
+  // Search only within the shared folder
+  const existing = await drive.files.list({
+    q: `name='${fileName}' and '${folderId}' in parents and trashed=false`,
+    fields: 'files(id)',
+    supportsAllDrives: false
+  });
+
   let fileId;
 
   if (existing.data.files.length > 0) {
+    // Update content only — no parent change needed
     fileId = existing.data.files[0].id;
-    await drive.files.update({ fileId, media });
+    await drive.files.update({
+      fileId,
+      media,
+      supportsAllDrives: false
+    });
     console.log(`Updated existing Drive file: ${fileId}`);
   } else {
+    // Create new file inside the shared folder
     const created = await drive.files.create({
       requestBody: {
         name: fileName,
         mimeType: 'text/html',
-        parents: [process.env.DRIVE_FOLDER_ID]   // ← saves into YOUR folder
+        parents: [folderId]
       },
       media,
-      fields: 'id'
+      fields: 'id',
+      supportsAllDrives: false
     });
     fileId = created.data.id;
+
+    // Make publicly readable
     await drive.permissions.create({
       fileId,
       requestBody: { role: 'reader', type: 'anyone' }
