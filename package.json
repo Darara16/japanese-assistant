@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.0",
+    "openai": "^4.0.0",
     "googleapis": "^140.0.0"
   }
 }
