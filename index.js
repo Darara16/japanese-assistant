@@ -310,10 +310,10 @@ async function run() {
   // Read all sheet tabs in parallel
   const [schedule, kanjiData, vocabData, podData, shadowData] = await Promise.all([
     getSheet(sheets, 'Schedule'),
-    getSheet(sheets, 'n4_vocab'),
     getSheet(sheets, 'n4_kanji'),
-    getSheet(sheets, 'reiko_patterns_examples'),
-    getSheet(sheets, 'japanese_podcast_kb')
+    getSheet(sheets, 'n4_vocab'),
+    getSheet(sheets, 'japanese_podcast_kb'),
+    getSheet(sheets, 'reiko_patterns_examples')
   ]);
 
   // Find today's row
