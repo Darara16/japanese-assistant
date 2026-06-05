@@ -40,7 +40,7 @@ function todayString() {
 async function saveHtmlToGitHub(html, dayNum) {
   const fileName = `japanese_study_day${dayNum}.html`;
   const repo     = process.env.GITHUB_REPOSITORY;
-  const pat      = process.env.GITHUB_PAT;
+  const pat      = process.env.G_PAT;
   const branch   = 'gh-pages';
   const url      = `https://api.github.com/repos/${repo}/contents/${fileName}`;
 
@@ -147,7 +147,7 @@ async function sendNotification(day, fileUrl) {
 // ── Build prompt ────────────────────────────────────────
 function buildPrompt(d) {
   const repo = process.env.GITHUB_REPOSITORY || '';
-  const pat  = process.env.GITHUB_PAT        || '';
+  const pat  = process.env.G_PAT        || '';
   const pct  = ((d.day / 60) * 100).toFixed(2);
 
   return `You are a Japanese study HTML renderer.
