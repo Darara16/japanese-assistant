@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Japanese Study - Day 3</title>
+<style>:root {
+  --bg: #daeaf7;
+  --bg-grad: linear-gradient(145deg, #e8f4fd 0%, #d0e8f5 50%, #c8e0f0 100%);
+  --nm-out: 6px 6px 14px #a8c8e0, -6px -6px 14px #ffffff;
+  --nm-card: 8px 8px 22px #9fc0db, -8px -8px 22px #ffffff;
+  --nm-in: inset 4px 4px 10px #a8c8e0, inset -4px -4px 10px #ffffff;
+  --nm-press: inset 3px 3px 8px #a8c8e0, inset -3px -3px 8px #ffffff;
+  --accent: linear-gradient(135deg, #1a6fa8, #26c6da);
+  --text-1: #0d2d4a;
+  --text-2: #2e6080;
+  --text-3: #6e9ab5;
+  --text-4: #9bbdd0;
+  --r: 18px;
+  --rs: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg-grad); background-attachment: fixed; color: var(--text-1); min-height: 100vh; padding: 32px 16px 80px; }
+body::before, body::after { content: ''; position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(80px); opacity: 0.22; }
+body::before { width: 480px; height: 480px; background: radial-gradient(circle, #2196f3, transparent); top: -80px; right: -80px; }
+body::after  { width: 380px; height: 380px; background: radial-gradient(circle, #26c6da, transparent); bottom: -60px; left: -60px; }
+.wrap { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+.header { text-align: center; margin-bottom: 40px; }
+.pills { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.pill { background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 5px 18px; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text-2); }
+.pill-accent { background: linear-gradient(135deg, #1a6fa8, #26c6da); box-shadow: 0 4px 16px rgba(26,111,168,0.35); color: #fff; }
+.header h1 { font-size: clamp(24px, 5vw, 38px); font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+.header h1 span { background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.header p { font-size: 13px; color: var(--text-3); }
+.prog-wrap { max-width: 600px; margin: 20px auto 0; }
+.prog-track { background: var(--bg); box-shadow: var(--nm-in); border-radius: 50px; height: 10px; overflow: hidden; }
+.prog-fill { height: 100%; width: 5.00%; background: linear-gradient(90deg, #1a6fa8, #26c6da); border-radius: 50px; transition: width 1.4s cubic-bezier(.4,0,.2,1); }
+.prog-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-3); font-weight: 600; }
+.section { background: var(--bg); box-shadow: var(--nm-card); border-radius: var(--r); padding: 24px 24px 22px; margin-bottom: 22px; opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.section.visible { opacity: 1; transform: translateY(0); }
+.sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(26,111,168,0.10); }
+.sec-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #1a6fa8, #26c6da); box-shadow: 0 4px 14px rgba(26,111,168,0.30); border-radius: var(--rs); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+.sec-title { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); }
+.sec-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.sec-count { margin-left: auto; background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 3px 12px; font-size: 11px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
+.kanji-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.k-card { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 18px 16px; }
+.k-char { font-size: 54px; font-weight: 800; line-height: 1; color: var(--text-1); margin-bottom: 10px; text-shadow: 2px 2px 5px #a8c8e0, -1px -1px 3px #fff; }
+.k-meaning { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+.k-readings { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.k-pill { background: var(--bg); box-shadow: var(--nm-press); border-radius: 50px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+.k-pill span { color: var(--text-4); font-size: 10px; margin-right: 3px; }
+.k-words { font-size: 12px; color: var(--text-3); line-height: 1.7; margin-bottom: 10px; }
+.k-ex { background: var(--bg); box-shadow: var(--nm-in); border-radius: var(--rs); padding: 10px 12px; }
+.k-ex .jp { font-size: 13px; color: var(--text-1); font-weight: 500; line-height: 1.5; }
+.k-ex .en { font-size: 11px; color: var(--text-3); font-style: italic; margin-top: 3px; }
+.v-list { display: flex; flex-direction: column; gap: 8px; }
+.v-item { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 12px 14px; display: grid; grid-template-columns: 150px 1fr; gap: 10px 16px; align-items: start; }
+.v-word { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.2; }
+.v-read { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.v-meaning { font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+.v-jp { font-size: 13px; color: var(--text-1); font-weight: 500; line-height: 1.5; }
+.v-en { font-size: 11px; color: var(--text-3); font-style: italic; margin-top: 2px; }
+@media (max-width: 480px) { .v-item { grid-template-columns: 1fr; } }
+.s-list { display: flex; flex-direction: column; gap: 8px; }
+.s-item { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 13px 16px; display: flex; align-items: flex-start; gap: 12px; }
+.s-num { width: 26px; height: 26px; background: var(--bg); box-shadow: var(--nm-out); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #1a6fa8; flex-shrink: 0; margin-top: 2px; }
+.s-content { flex: 1; min-width: 0; }
+.s-pattern { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+.s-jp { font-size: 15px; color: var(--text-1); font-weight: 600; line-height: 1.5; word-break: break-word; }
+.s-hint { font-size: 11px; color: var(--text-3); font-style: italic; margin-top: 3px; }
+.s-play { width: 32px; height: 32px; background: linear-gradient(135deg, #1a6fa8, #26c6da); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; font-size: 11px; }
+.pod-card { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); overflow: hidden; }
+.pod-banner { background: linear-gradient(135deg, #1a6fa8, #26c6da); padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.pod-thumb { width: 56px; height: 56px; background: rgba(255,255,255,0.18); border-radius: var(--rs); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.pod-ep { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
+.pod-title { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 4px; }
+.pod-furi { font-size: 11px; color: rgba(255,255,255,0.75); line-height: 1.6; }
+.pod-body { padding: 18px 20px; }
+.pod-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.pod-tag { background: var(--bg); box-shadow: var(--nm-press); border-radius: 50px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: #1a6fa8; }
+.pod-reason { background: var(--bg); box-shadow: var(--nm-in); border-radius: var(--rs); padding: 12px 14px; font-size: 13px; color: var(--text-2); line-height: 1.65; margin-bottom: 14px; }
+.pod-reason strong { color: #1a6fa8; }
+.pod-phrases { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.pod-phrase { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 9px 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pod-phrase .pjp { font-size: 14px; font-weight: 700; color: var(--text-1); }
+.pod-phrase .parr { color: var(--text-4); font-size: 12px; }
+.pod-phrase .pen { font-size: 12px; color: var(--text-2); }
+.pod-link { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #1a6fa8, #26c6da); box-shadow: 0 4px 14px rgba(26,111,168,0.35); border-radius: 50px; padding: 11px 26px; text-decoration: none; font-size: 13px; font-weight: 700; color: #fff; }
+.d-list { display: flex; flex-direction: column; gap: 14px; }
+.d-item { background: var(--bg); box-shadow: var(--nm-out); border-radius: var(--rs); padding: 16px 18px; }
+.d-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-4); margin-bottom: 3px; }
+.d-orig { font-size: 14px; font-weight: 700; color: var(--text-1); margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(26,111,168,0.10); }
+.d-vars { display: flex; flex-direction: column; gap: 7px; }
+.d-var { background: var(--bg); box-shadow: var(--nm-in); border-radius: var(--rs); padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; }
+.d-badge { background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 2px 9px; font-size: 10px; font-weight: 800; color: #1a6fa8; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+.d-text { font-size: 13px; color: var(--text-1); line-height: 1.55; }
+.d-note { font-size: 11px; color: var(--text-3); margin-top: 2px; font-style: italic; }
+.done-wrap { text-align: center; padding: 20px 16px; }
+.stat-pills { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.stat-pill { background: var(--bg); box-shadow: var(--nm-out); border-radius: 50px; padding: 7px 16px; font-size: 12px; font-weight: 700; color: var(--text-2); display: flex; align-items: center; gap: 5px; }
+.stat-pill b { background: linear-gradient(135deg, #1a6fa8, #26c6da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 15px; }
+.done-btn { background: var(--bg); box-shadow: var(--nm-card); border: none; border-radius: 50px; padding: 16px 48px; font-size: 15px; font-weight: 800; color: var(--text-1); cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; outline: none; }
+.done-btn:hover { box-shadow: 10px 10px 26px #9fc0db, -10px -10px 26px #fff; }
+.done-btn:active { box-shadow: var(--nm-press); transform: scale(0.98); }
+.done-note { font-size: 12px; color: var(--text-3); margin-top: 12px; }
+#confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+<div class="wrap">
+
+  <div class="header">
+    <div class="pills">
+      <div class="pill pill-accent">Day 3 of 60</div>
+      <div class="pill">N4 &middot; 2026</div>
+      <div class="pill">07/06/2026</div>
+    </div>
+    <h1>Japanese Study <span>&#26085;&#26412;&#35486;</span></h1>
+    <p>Daily session &middot; Kanji &middot; Vocabulary &middot; Shadowing &middot; Podcast</p>
+    <div class="prog-wrap">
+      <div class="prog-track"><div class="prog-fill" id="progressFill"></div></div>
+      <div class="prog-labels"><span>Day 3</span><span>5.00%</span><span>Day 60</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#31558;</div>
+      <div><div class="sec-title">Kanji</div><div class="sec-sub">K7 · K8 · K9</div></div>
+      <div class="sec-count">3 characters</div>
+    </div>
+    <div class="kanji-grid">
+      <div class="k-card">
+        <div class="k-char">別</div>
+        <div class="k-meaning">separate, another, different</div>
+        <div class="k-readings">
+          <div class="k-pill"><span>on</span>ベツ</div>
+          <div class="k-pill"><span>kun</span>わか.れる</div>
+        </div>
+        <div class="k-words">別(べつ); 別々(べつべつ); 特別(とくべつ)</div>
+        <div class="k-ex">
+          <div class="jp">私たちは駅の前で別れました。</div>
+          <div class="en">We parted in front of the station.</div>
+        </div>
+      </div>
+      <div class="k-card">
+        <div class="k-char">文</div>
+        <div class="k-meaning">sentence, text, literature</div>
+        <div class="k-readings">
+          <div class="k-pill"><span>on</span>ブン, モン</div>
+          <div class="k-pill"><span>kun</span>ふみ</div>
+        </div>
+        <div class="k-words">文学(ぶんがく); 文化(ぶんか); 作文(さくぶん)</div>
+        <div class="k-ex">
+          <div class="jp">日本の文化に興味があります。</div>
+          <div class="en">I am interested in Japanese culture.</div>
+        </div>
+      </div>
+      <div class="k-card">
+        <div class="k-char">物</div>
+        <div class="k-meaning">thing, object, matter</div>
+        <div class="k-readings">
+          <div class="k-pill"><span>on</span>ブツ, モツ</div>
+          <div class="k-pill"><span>kun</span>もの</div>
+        </div>
+        <div class="k-words">物(もの); 動物(どうぶつ); 買い物(かいもの)</div>
+        <div class="k-ex">
+          <div class="jp">動物園でパンダを見ました。</div>
+          <div class="en">I saw a panda at the zoo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#35486;</div>
+      <div><div class="sec-title">Vocabulary</div><div class="sec-sub">V25 - V36</div></div>
+      <div class="sec-count">12 words</div>
+    </div>
+    <div class="v-list">
+      <div class="v-item">
+        <div>
+          <div class="v-word">安心</div>
+          <div class="v-read">あんしん</div>
+        </div>
+        <div>
+          <div class="v-meaning">relief; peace of mind</div>
+          <div class="v-jp">子供が帰ってきて、安心した。</div>
+          <div class="v-en">I felt relieved when my child came home.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">安全</div>
+          <div class="v-read">あんぜん</div>
+        </div>
+        <div>
+          <div class="v-meaning">safety; security</div>
+          <div class="v-jp">この道は夜でも安全です。</div>
+          <div class="v-en">This road is safe even at night.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">あんな</div>
+          <div class="v-read">あんな</div>
+        </div>
+        <div>
+          <div class="v-meaning">such; that kind of; like that</div>
+          <div class="v-jp">あんな難しい問題は解けない。</div>
+          <div class="v-en">I can't solve such a difficult problem.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">案内・する</div>
+          <div class="v-read">あんない・する</div>
+        </div>
+        <div>
+          <div class="v-meaning">to guide; to show around</div>
+          <div class="v-jp">駅まで案内しましょうか。</div>
+          <div class="v-en">Shall I guide you to the station?</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">以下</div>
+          <div class="v-read">いか</div>
+        </div>
+        <div>
+          <div class="v-meaning">less than; below; the following</div>
+          <div class="v-jp">18歳以下は入れません。</div>
+          <div class="v-en">Those under 18 cannot enter.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">以外</div>
+          <div class="v-read">いがい</div>
+        </div>
+        <div>
+          <div class="v-meaning">with the exception of; other than</div>
+          <div class="v-jp">彼以外、全員来た。</div>
+          <div class="v-en">Everyone came except him.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">医学</div>
+          <div class="v-read">いがく</div>
+        </div>
+        <div>
+          <div class="v-meaning">medical science; medicine</div>
+          <div class="v-jp">医学を勉強して医者になりたい。</div>
+          <div class="v-en">I want to study medicine and become a doctor.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">生きる</div>
+          <div class="v-read">いきる</div>
+        </div>
+        <div>
+          <div class="v-meaning">to live; to be alive</div>
+          <div class="v-jp">夢のために生きている。</div>
+          <div class="v-en">I am living for my dreams.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">意見</div>
+          <div class="v-read">いけん</div>
+        </div>
+        <div>
+          <div class="v-meaning">opinion; view</div>
+          <div class="v-jp">あなたの意見を聞かせてください。</div>
+          <div class="v-en">Please let me hear your opinion.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">石</div>
+          <div class="v-read">いし</div>
+        </div>
+        <div>
+          <div class="v-meaning">stone; rock</div>
+          <div class="v-jp">川で石を拾った。</div>
+          <div class="v-en">I picked up a stone by the river.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">いじめる</div>
+          <div class="v-read">いじめる</div>
+        </div>
+        <div>
+          <div class="v-meaning">to bully; to tease</div>
+          <div class="v-jp">友達をいじめてはいけない。</div>
+          <div class="v-en">You must not bully your friends.</div>
+        </div>
+      </div>
+      <div class="v-item">
+        <div>
+          <div class="v-word">以上</div>
+          <div class="v-read">いじょう</div>
+        </div>
+        <div>
+          <div class="v-meaning">more than; over; that's all</div>
+          <div class="v-jp">1000円以上のものを買った。</div>
+          <div class="v-en">I bought something that cost over 1,000 yen.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#127897;</div>
+      <div><div class="sec-title">Shadowing</div><div class="sec-sub">Reiko sentences</div></div>
+      <div class="sec-count">10 sentences</div>
+    </div>
+    <div class="s-list">
+      <div class="s-item">
+        <div class="s-num">1</div>
+        <div class="s-content">
+          <div class="s-pattern">〜じゃない（？） (seeking agreement)</div>
+          <div class="s-jp">街(まち)で誰(だれ)に会(あ)うか分(わ)からないじゃない。</div>
+          <div class="s-hint">you never know who you'll meet</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">2</div>
+        <div class="s-content">
+          <div class="s-pattern">〜じゃない（？） (seeking agreement)</div>
+          <div class="s-jp">新曲(しんきょく)今(いま)流行(はや)ってるじゃない?</div>
+          <div class="s-hint">that new song's trending, right?</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">3</div>
+        <div class="s-content">
+          <div class="s-pattern">〜じゃない（？） (seeking agreement)</div>
+          <div class="s-jp">携帯(けいたい)今(いま)触(さわ)れないじゃない。</div>
+          <div class="s-hint">can't touch the phone, right</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">4</div>
+        <div class="s-content">
+          <div class="s-pattern">〜じゃない（？） (seeking agreement)</div>
+          <div class="s-jp">みんな外(そと)ではお洋服(ようふく)毎日(まいにち)変(か)えるじゃん。</div>
+          <div class="s-hint">everyone changes clothes daily</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">5</div>
+        <div class="s-content">
+          <div class="s-pattern">〜じゃない（？） (seeking agreement)</div>
+          <div class="s-jp">今(いま)の名言(めいげん)なんじゃない?</div>
+          <div class="s-hint">that was a great line, no?</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">6</div>
+        <div class="s-content">
+          <div class="s-pattern">〜みたいな / 〜みたいの (vague illustration / quote)</div>
+          <div class="s-jp">ダラダラしてるとこだけでいいんですみたいな。</div>
+          <div class="s-hint">like, 'just the lazy parts'</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">7</div>
+        <div class="s-content">
+          <div class="s-pattern">〜みたいな / 〜みたいの (vague illustration / quote)</div>
+          <div class="s-jp">運(うん)が来(く)るみたいな。</div>
+          <div class="s-hint">like, 'luck comes'</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">8</div>
+        <div class="s-content">
+          <div class="s-pattern">〜みたいな / 〜みたいの (vague illustration / quote)</div>
+          <div class="s-jp">そういう人(ひと)もいるよねみたいな。</div>
+          <div class="s-hint">like, 'some people are that way'</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">9</div>
+        <div class="s-content">
+          <div class="s-pattern">〜みたいな / 〜みたいの (vague illustration / quote)</div>
+          <div class="s-jp">撮影(さつえい)スペースみたいなところがある。</div>
+          <div class="s-hint">like a filming space</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+      <div class="s-item">
+        <div class="s-num">10</div>
+        <div class="s-content">
+          <div class="s-pattern">〜みたいな / 〜みたいの (vague illustration / quote)</div>
+          <div class="s-jp">こうやって頑張(がんば)ろうみたいな。</div>
+          <div class="s-hint">like, 'let's try hard'</div>
+        </div>
+        <div class="s-play">&#9654;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#128251;</div>
+      <div><div class="sec-title">Podcast</div><div class="sec-sub">P97 · Bite Size Japanese</div></div>
+      <div class="sec-count">ep. 599 · 11 min</div>
+    </div>
+    <div class="pod-card">
+      <div class="pod-banner">
+        <div class="pod-thumb">&#127911;</div>
+        <div>
+          <div class="pod-ep">Bite Size Japanese · Episode 599</div>
+          <div class="pod-title">にほん？にっぽん？どっち？</div>
+          <div class="pod-furi">にほん？にっぽん？どっち？</div>
+        </div>
+      </div>
+      <div class="pod-body">
+        <div class="pod-tags"><span class="pod-tag">uncategorized</span></div>
+        <div class="pod-reason">Paired with today's vocab <strong>安心, 安全</strong> — this episode connects those words in natural spoken Japanese.</div>
+        <div class="pod-phrases">
+          <div class="pod-phrase">
+            <span class="pjp">にほん</span>
+            <span class="parr">&#8594;</span>
+            <span class="pen">Japan</span>
+          </div>
+          <div class="pod-phrase">
+            <span class="pjp">にっぽん</span>
+            <span class="parr">&#8594;</span>
+            <span class="pen">Nihon</span>
+          </div>
+          <div class="pod-phrase">
+            <span class="pjp">どっち</span>
+            <span class="parr">&#8594;</span>
+            <span class="pen">which</span>
+          </div>
+        </div>
+        <a class="pod-link" href="https://podcasts.apple.com/us/podcast/599-%E3%81%AB%E3%81%BB%E3%82%93-%E3%81%AB%E3%81%A3%E3%81%BD%E3%82%93-%E3%81%A9%E3%81%A3%E3%81%A1/id1588405417?i=1000717500171" target="_blank" rel="noopener">&#9654;&nbsp; Open Episode</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-icon">&#128483;</div>
+      <div><div class="sec-title">Speaking Drills</div><div class="sec-sub">First 5 sentences x 2 variations</div></div>
+      <div class="sec-count">5 x 2</div>
+    </div>
+    <div class="d-list">
+      <div class="d-item">
+        <div class="d-label">Original · G21</div>
+        <div class="d-orig">街(まち)で誰(だれ)に会(あ)うか分(わ)からないじゃない。</div>
+        <div class="d-vars">
+          <div class="d-var">
+            <div class="d-badge">Casual</div>
+            <div><div class="d-text">分からないじゃん</div><div class="d-note">「じゃない」が「じゃん」に</div></div>
+          </div>
+          <div class="d-var">
+            <div class="d-badge">Formal</div>
+            <div><div class="d-text">分かりませんじゃないか</div><div class="d-note">「分からない」「じゃない」の位置を変更</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="d-item">
+        <div class="d-label">Original · G22</div>
+        <div class="d-orig">新曲(しんきょく)今(いま)流行(はや)ってるじゃない?</div>
+        <div class="d-vars">
+          <div class="d-var">
+            <div class="d-badge">Casual</div>
+            <div><div class="d-text">流行ってるじゃん</div><div class="d-note">「じゃない」が「じゃん」に</div></div>
+          </div>
+          <div class="d-var">
+            <div class="d-badge">Formal</div>
+            <div><div class="d-text">流行っておりますじゃないか</div><div class="d-note">「流行ってる」を「流行っております」に</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="d-item">
+        <div class="d-label">Original · G23</div>
+        <div class="d-orig">携帯(けいたい)今(いま)触(さわ)れないじゃない。</div>
+        <div class="d-vars">
+          <div class="d-var">
+            <div class="d-badge">Casual</div>
+            <div><div class="d-text">触れないじゃん</div><div class="d-note">「じゃない」が「じゃん」に</div></div>
+          </div>
+          <div class="d-var">
+            <div class="d-badge">Formal</div>
+            <div><div class="d-text">触れませんじゃないか</div><div class="d-note">「触れない」を「触れません」に</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="d-item">
+        <div class="d-label">Original · G24</div>
+        <div class="d-orig">みんな外(そと)ではお洋服(ようふく)毎日(まいにち)変(か)えるじゃん。</div>
+        <div class="d-vars">
+          <div class="d-var">
+            <div class="d-badge">Casual</div>
+            <div><div class="d-text">毎日変えてるじゃん</div><div class="d-note">「変える」を「変えている」に</div></div>
+          </div>
+          <div class="d-var">
+            <div class="d-badge">Formal</div>
+            <div><div class="d-text">変えておりますじゃないか</div><div class="d-note">「変える」を「変えております」に</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="d-item">
+        <div class="d-label">Original · G25</div>
+        <div class="d-orig">今(いま)の名言(めいげん)なんじゃない?</div>
+        <div class="d-vars">
+          <div class="d-var">
+            <div class="d-badge">Casual</div>
+            <div><div class="d-text">名言じゃんじゃない</div><div class="d-note">「なんじゃない」を「じゃん」に</div></div>
+          </div>
+          <div class="d-var">
+            <div class="d-badge">Formal</div>
+            <div><div class="d-text">名言ではないじゃないか</div><div class="d-note">「なんじゃない」を「ではない」に</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="done-wrap">
+      <div class="stat-pills">
+        <div class="stat-pill"><b>3</b> kanji</div>
+        <div class="stat-pill"><b>12</b> vocab</div>
+        <div class="stat-pill"><b>10</b> shadowing</div>
+        <div class="stat-pill"><b>1</b> podcast</div>
+      </div>
+      <button class="done-btn" id="doneBtn" onclick="markDone()">&#10003;&nbsp; Mark as Done</button>
+      <div class="done-note" id="doneNote">57 days remaining after today</div>
+    </div>
+  </div>
+
+</div>
+<script>
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.07 });
+document.querySelectorAll('.section').forEach(s => io.observe(s));
+window.addEventListener('load', () => {
+  setTimeout(() => { document.getElementById('progressFill').style.width = '5.00%'; }, 500);
+});
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const colors = ['#1a6fa8','#26c6da','#4fc3f7','#81d4fa','#b3e5fc','#ffffff','#e1f5fe'];
+  const pieces = Array.from({length:140}, () => ({
+    x: Math.random()*canvas.width, y: Math.random()*-canvas.height,
+    r: Math.random()*7+2, d: Math.random()*2.5+1,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    tilt: Math.random()*10-5, tiltAngle:0, tiltSpeed:Math.random()*0.1+0.04,
+    shape: Math.random()>0.5?'circle':'rect'
+  }));
+  let frame=0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle+=p.tiltSpeed; p.y+=p.d; p.tilt=Math.sin(p.tiltAngle)*12;
+      ctx.beginPath(); ctx.fillStyle=p.color;
+      if(p.shape==='circle'){ctx.arc(p.x+p.tilt,p.y,p.r,0,Math.PI*2);ctx.fill();}
+      else{ctx.fillRect(p.x+p.tilt,p.y,p.r*2,p.r);}
+    });
+    frame++;
+    if(frame<200) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+function markDone() {
+  const btn = document.getElementById('doneBtn');
+  const note = document.getElementById('doneNote');
+  if (btn.classList.contains('done')) return;
+  btn.classList.add('done');
+  btn.innerHTML = '&#127800;&nbsp; Day 3 Complete!';
+  btn.style.background = 'linear-gradient(135deg,#1a6fa8,#26c6da)';
+  btn.style.color = '#fff';
+  btn.style.boxShadow = '0 6px 22px rgba(26,111,168,0.40)';
+  note.textContent = 'Great work. See you tomorrow for Day 4.';
+  launchConfetti();
+  try { localStorage.setItem('jpstudy_day3_done','true'); } catch(e) {}
+  fetch('https://api.github.com/repos/Darara16/japanese-assistant/actions/workflows/mark-done.yml/dispatches', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ', 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+    body: JSON.stringify({ ref: 'main', inputs: { day: '3', date: '07/06/2026' } })
+  }).catch(e => console.log('Status update failed:',e));
+}
+try {
+  if (localStorage.getItem('jpstudy_day3_done')==='true') {
+    const btn=document.getElementById('doneBtn');
+    btn.classList.add('done');
+    btn.innerHTML='&#127800;&nbsp; Day 3 Complete!';
+    btn.style.background='linear-gradient(135deg,#1a6fa8,#26c6da)';
+    btn.style.color='#fff';
+    btn.style.boxShadow='0 6px 22px rgba(26,111,168,0.40)';
+    document.getElementById('doneNote').textContent='Great work. See you tomorrow for Day 4.';
+  }
+} catch(e) {}
+</script>
+</body>
+</html>
