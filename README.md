@@ -1,4 +1,4 @@
-# 🇯🇵 Japanese Study System
+# Japanese Study System
 
 Automated daily Japanese study file generator for N4 level.
 
